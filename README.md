@@ -12,7 +12,7 @@ Happy-lunch is a web application that helps users discover restaurants and view 
 
 - **Frontend:** React, Vite, Tailwind CSS
 - **Backend:** Node.js, Express
-- **Database:** Mock Data (JSON) - *To be migrated to a real DB*
+- **Database:** PostgreSQL, Supabase
 
 ## Getting Started
 
