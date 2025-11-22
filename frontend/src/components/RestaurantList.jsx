@@ -24,6 +24,9 @@ const RestaurantList = () => {
   // Geolocation hook
   const { userLocation, locationError, locationLoading, locationPermission, requestLocation } = useGeolocation();
 
+  // Success banner state (auto-hide after 5 seconds)
+  const [showSuccessBanner, setShowSuccessBanner] = useState(false);
+
   // Scroll state for sidebar
   const [scrollState, setScrollState] = useState({
     hasScrollTop: false,
@@ -39,6 +42,18 @@ const RestaurantList = () => {
       setScrollState(prev => ({ ...prev, hasScrollBottom }));
     }
   }, []);
+
+  // Auto-hide success banner after 5 seconds when location is obtained
+  useEffect(() => {
+    if (userLocation) {
+      setShowSuccessBanner(true);
+      const timer = setTimeout(() => {
+        setShowSuccessBanner(false);
+      }, 5000); // Hide after 5 seconds
+
+      return () => clearTimeout(timer);
+    }
+  }, [userLocation]);
 
   // Utility function to parse opening hours
   const parseOpeningHours = (hoursString) => {
@@ -307,10 +322,10 @@ const RestaurantList = () => {
         </div>
       )}
 
-      {/* Location Success Banner */}
-      {userLocation && (
+      {/* Location Success Banner - Auto-hide after 5 seconds */}
+      {userLocation && showSuccessBanner && (
         <div className="pt-8 pb-4">
-          <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-4 flex items-center gap-4">
+          <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-4 flex items-center gap-4 animate-fade-in">
             <div className="p-2 bg-white rounded-lg shadow-sm">
               <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -320,6 +335,15 @@ const RestaurantList = () => {
               <h4 className="font-bold text-green-900">位置情報が有効です</h4>
               <p className="text-sm text-green-700">近い順にレストランを表示しています</p>
             </div>
+            <button
+              onClick={() => setShowSuccessBanner(false)}
+              className="p-1 hover:bg-green-100 rounded-lg transition-colors"
+              aria-label="閉じる"
+            >
+              <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
           </div>
         </div>
       )}
