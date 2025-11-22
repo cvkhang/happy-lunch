@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
 import RestaurantCard from './RestaurantCard';
 import { FILTER_OPTIONS, getTimePeriod } from '../config/filterOptions';
+import { API_BASE_URL } from '../config/api';
 
 const RestaurantList = () => {
   const [restaurants, setRestaurants] = useState([]);
@@ -58,7 +59,7 @@ const RestaurantList = () => {
   useEffect(() => {
     const fetchRestaurants = async () => {
       try {
-        const response = await axios.get(`http://localhost:5000/api/restaurants?search=${searchTerm}`);
+        const response = await axios.get(`${API_BASE_URL}/api/restaurants?search=${searchTerm}`);
         setRestaurants(response.data);
         setLoading(false);
       } catch (err) {
