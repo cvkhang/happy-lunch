@@ -12,6 +12,7 @@ const RestaurantDetail = () => {
 
   useEffect(() => {
     const fetchRestaurant = async () => {
+      window.scrollTo(0, 0);
       try {
         const response = await axios.get(`${API_BASE_URL}/api/restaurants/${id}`);
         setRestaurant(response.data);
@@ -104,7 +105,7 @@ const RestaurantDetail = () => {
                 </div>
                 <div className="font-medium text-slate-700">{item.name || item}</div>
                 <div className="text-sm text-orange-600 font-semibold mt-1">
-                  {item.price ? `${item.price.toLocaleString()} đ` : '- đ'}
+                  {item.price ? `${Math.floor(item.price).toLocaleString('ja-JP')}đ` : '-đ'}
                 </div>
               </div>
             ))}

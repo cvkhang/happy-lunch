@@ -3,6 +3,8 @@ import axios from 'axios';
 import RestaurantCard from './RestaurantCard';
 import { FILTER_OPTIONS, getTimePeriod } from '../config/filterOptions';
 import { API_BASE_URL } from '../config/api';
+import useGeolocation from '../hooks/useGeolocation';
+import { calculateDistance } from '../utils/distance';
 
 const RestaurantList = () => {
   const [restaurants, setRestaurants] = useState([]);
@@ -17,6 +19,10 @@ const RestaurantList = () => {
   const [selectedPriceRanges, setSelectedPriceRanges] = useState([]);
   const [selectedRatings, setSelectedRatings] = useState([]);
   const [selectedTimePeriods, setSelectedTimePeriods] = useState([]);
+  const [selectedDistanceFilter, setSelectedDistanceFilter] = useState(null); // 'near' (≤3km) or 'far' (>3km)
+
+  // Geolocation hook
+  const { userLocation, locationError, locationLoading, locationPermission, requestLocation } = useGeolocation();
 
   // Scroll state for sidebar
   const [scrollState, setScrollState] = useState({
@@ -81,6 +87,19 @@ const RestaurantList = () => {
   useEffect(() => {
     let filtered = [...restaurants];
 
+    // Calculate distance for each restaurant if user location is available
+    if (userLocation) {
+      filtered = filtered.map(restaurant => ({
+        ...restaurant,
+        distance: calculateDistance(
+          userLocation.latitude,
+          userLocation.longitude,
+          restaurant.latitude,
+          restaurant.longitude
+        )
+      }));
+    }
+
     // Filter by cuisine type
     if (selectedCuisines.length > 0) {
       filtered = filtered.filter(restaurant =>
@@ -144,8 +163,43 @@ const RestaurantList = () => {
       });
     }
 
+    // Filter by distance - uses config from filterOptions.js
+    if (selectedDistanceFilter !== null && userLocation) {
+      const distanceConfig = FILTER_OPTIONS.distanceFilters.find(f => f.value === selectedDistanceFilter);
+      if (distanceConfig) {
+        filtered = filtered.filter(restaurant => {
+          if (restaurant.distance === undefined) return false;
+
+          // Check maxDistance (if defined)
+          if (distanceConfig.maxDistance !== undefined && restaurant.distance > distanceConfig.maxDistance) {
+            return false;
+          }
+
+          // Check minDistance (if defined)
+          if (distanceConfig.minDistance !== undefined && restaurant.distance < distanceConfig.minDistance) {
+            return false;
+          }
+
+          return true;
+        });
+      }
+    }
+
+    // Sort by distance if user location is available
+    if (userLocation) {
+      filtered.sort((a, b) => {
+        // Restaurants with distance come first
+        if (a.distance !== undefined && b.distance === undefined) return -1;
+        if (a.distance === undefined && b.distance !== undefined) return 1;
+        if (a.distance !== undefined && b.distance !== undefined) {
+          return a.distance - b.distance;
+        }
+        return 0;
+      });
+    }
+
     setFilteredRestaurants(filtered);
-  }, [restaurants, selectedCuisines, selectedPriceRanges, selectedRatings, selectedTimePeriods]);
+  }, [restaurants, selectedCuisines, selectedPriceRanges, selectedRatings, selectedTimePeriods, selectedDistanceFilter, userLocation]);
 
   const loadMore = () => {
     setDisplayCount(prev => prev + 5);
@@ -181,13 +235,95 @@ const RestaurantList = () => {
     setSelectedPriceRanges([]);
     setSelectedRatings([]);
     setSelectedTimePeriods([]);
+    setSelectedDistanceFilter(null);
   };
 
   const hasActiveFilters = selectedCuisines.length > 0 || selectedPriceRanges.length > 0 ||
-    selectedRatings.length > 0 || selectedTimePeriods.length > 0;
+    selectedRatings.length > 0 || selectedTimePeriods.length > 0 || selectedDistanceFilter !== null;
 
   return (
     <div className="container mx-auto px-6">
+      {/* Location Permission Banner */}
+      {!userLocation && (
+        <div className="pt-8 pb-4">
+          {locationPermission === 'denied' ? (
+            <div className="bg-red-50 border border-red-200 rounded-2xl p-4 flex items-start gap-4">
+              <div className="p-2 bg-red-100 rounded-lg">
+                <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                </svg>
+              </div>
+              <div className="flex-1">
+                <h4 className="font-bold text-red-900 mb-1">位置情報へのアクセスが拒否されました</h4>
+                <p className="text-sm text-red-700">ブラウザの設定で位置情報を許可してください。近くのレストランを表示できます。</p>
+              </div>
+            </div>
+          ) : locationError ? (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-4 flex items-start gap-4">
+              <div className="p-2 bg-yellow-100 rounded-lg">
+                <svg className="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                </svg>
+              </div>
+              <div className="flex-1">
+                <h4 className="font-bold text-yellow-900 mb-1">位置情報エラー</h4>
+                <p className="text-sm text-yellow-700">{locationError}</p>
+              </div>
+              <button
+                onClick={requestLocation}
+                className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors text-sm font-semibold"
+              >
+                再試行
+              </button>
+            </div>
+          ) : (
+            <div className="bg-gradient-to-r from-orange-50 to-red-50 border border-orange-200 rounded-2xl p-4 flex items-start gap-4">
+              <div className="p-2 bg-white rounded-lg shadow-sm">
+                <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                </svg>
+              </div>
+              <div className="flex-1">
+                <h4 className="font-bold text-slate-900 mb-1">近くのレストランを見つけましょう</h4>
+                <p className="text-sm text-slate-600">位置情報を共有すると、距離順にレストランを表示できます。</p>
+              </div>
+              <button
+                onClick={requestLocation}
+                disabled={locationLoading}
+                className="px-4 py-2 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg hover:from-orange-600 hover:to-red-700 transition-all text-sm font-semibold shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {locationLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                    取得中...
+                  </>
+                ) : (
+                  '位置情報を許可'
+                )}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Location Success Banner */}
+      {userLocation && (
+        <div className="pt-8 pb-4">
+          <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-4 flex items-center gap-4">
+            <div className="p-2 bg-white rounded-lg shadow-sm">
+              <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+            </div>
+            <div className="flex-1">
+              <h4 className="font-bold text-green-900">位置情報が有効です</h4>
+              <p className="text-sm text-green-700">近い順にレストランを表示しています</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Greeting & Search Section */}
       <div className="mb-12 pt-12">
         <div className="flex flex-col md:flex-row md:items-center gap-8">
@@ -256,6 +392,38 @@ const RestaurantList = () => {
                     setScrollState({ hasScrollTop, hasScrollBottom });
                   }}
                 >
+                  {/* Distance Filter - Only show if location is available */}
+                  {userLocation && (
+                    <div className="mb-8">
+                      <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center">
+                        <span className="w-1 h-4 bg-orange-400 rounded-full mr-2"></span>
+                        距離
+                      </h4>
+                      <div className="space-y-2.5">
+                        {FILTER_OPTIONS.distanceFilters.map((item, i) => (
+                          <label
+                            key={i}
+                            className="flex items-center group cursor-pointer p-2 rounded-lg hover:bg-slate-50 transition-colors -mx-2"
+                            onClick={() => setSelectedDistanceFilter(selectedDistanceFilter === item.value ? null : item.value)}
+                          >
+                            <div className={`w-5 h-5 rounded-full border flex items-center justify-center mr-3 transition-all duration-200 ${selectedDistanceFilter === item.value
+                              ? 'border-orange-500 bg-orange-500 shadow-sm shadow-orange-200'
+                              : 'border-slate-300 group-hover:border-orange-400 bg-white'
+                              }`}>
+                              {selectedDistanceFilter === item.value && (
+                                <div className="w-2 h-2 bg-white rounded-full"></div>
+                              )}
+                            </div>
+                            <span className={`transition-colors text-sm ${selectedDistanceFilter === item.value ? 'text-slate-900 font-medium' : 'text-slate-600 group-hover:text-slate-900'
+                              }`}>
+                              {item.icon} {item.label}
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Opening Hours Filter */}
                   <div className="mb-8">
                     <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center">
