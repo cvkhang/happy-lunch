@@ -43,7 +43,7 @@ const RestaurantCard = ({ restaurant }) => {
               ))}
             </div>
             <span className="font-bold text-slate-700 mr-1 text-sm">{restaurant.rating?.toFixed(1) || '0.0'}</span>
-            <span className="text-slate-400 text-xs">({restaurant.Reviews?.length || 0} votes)</span>
+            <span className="text-slate-400 text-xs">({restaurant.Reviews?.length || 0} 件の評価)</span>
           </div>
 
           <div className="border-t border-slate-100 my-2"></div>
@@ -58,7 +58,7 @@ const RestaurantCard = ({ restaurant }) => {
               ))
             ) : (
               <div className="flex items-start">
-                <p className="text-slate-400 text-xs italic">No reviews available yet.</p>
+                <p className="text-slate-400 text-xs italic">まだレビューがありません。</p>
               </div>
             )}
           </div>

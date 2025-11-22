@@ -18,7 +18,7 @@ const RestaurantDetail = () => {
         setLoading(false);
       } catch (err) {
         console.error("Error fetching restaurant details:", err);
-        setError("Failed to load restaurant details.");
+        setError("レストランの詳細を読み込めませんでした。");
         setLoading(false);
       }
     };
@@ -33,7 +33,7 @@ const RestaurantDetail = () => {
   );
 
   if (error) return <div className="text-center mt-20 text-red-500 text-xl">{error}</div>;
-  if (!restaurant) return <div className="text-center mt-20 text-xl text-slate-600">Restaurant not found.</div>;
+  if (!restaurant) return <div className="text-center mt-20 text-xl text-slate-600">レストランが見つかりません。</div>;
 
   return (
     <div className="bg-slate-50/50 min-h-screen pb-20">
@@ -55,8 +55,8 @@ const RestaurantDetail = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
             <div className="flex items-center text-slate-600">
               <span className="text-yellow-400 mr-2">★</span>
-              <span className="font-semibold">{restaurant.rating}</span>
-              <span className="text-slate-400 ml-1">(100 voted)</span>
+              <span className="font-semibold">{Number(restaurant.rating).toFixed(1)}</span>
+              <span className="text-slate-400 ml-1">({restaurant.Reviews?.length || 0} 件の評価)</span>
             </div>
             <div className="flex items-center text-slate-600">
               <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -69,13 +69,13 @@ const RestaurantDetail = () => {
               <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
               </svg>
-              <span>{restaurant.phone || 'N/A'}</span>
+              <span>{restaurant.phone ? restaurant.phone.replace(/-/g, '') : '情報なし'}</span>
             </div>
             <div className="flex items-center text-slate-600">
               <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
               </svg>
-              <span>{restaurant.opening_hours || 'N/A'}</span>
+              <span>{restaurant.opening_hours || '情報なし'}</span>
             </div>
           </div>
         </div>
@@ -104,7 +104,7 @@ const RestaurantDetail = () => {
                 </div>
                 <div className="font-medium text-slate-700">{item.name || item}</div>
                 <div className="text-sm text-orange-600 font-semibold mt-1">
-                  {item.price ? `¥${item.price.toLocaleString()}` : '¥-'}
+                  {item.price ? `${item.price.toLocaleString()} đ` : '- đ'}
                 </div>
               </div>
             ))}
@@ -136,7 +136,7 @@ const RestaurantDetail = () => {
                     <div className="flex-grow">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-3">
-                          <span className="font-semibold text-slate-700">{review.user_id || 'Anonymous'}</span>
+                          <span className="font-semibold text-slate-700">{review.user_id || '匿名'}</span>
                           <div className="flex text-yellow-400 text-sm">
                             {[...Array(5)].map((_, i) => (
                               <span key={i}>{i < (review.rating || 5) ? '★' : '☆'}</span>

@@ -64,7 +64,7 @@ const RestaurantList = () => {
         setLoading(false);
       } catch (err) {
         console.error("Error fetching data:", err);
-        setError("Failed to load restaurants.");
+        setError("レストランを読み込めませんでした。");
         setLoading(false);
       }
     };
@@ -198,7 +198,7 @@ const RestaurantList = () => {
           <div className="relative flex-grow max-w-3xl">
             <input
               type="text"
-              placeholder="Search for restaurants..."
+              placeholder="レストランを検索..."
               className="w-full bg-white border-0 px-8 py-5 rounded-full text-slate-700 shadow-lg shadow-slate-200/50 focus:outline-none focus:ring-4 focus:ring-orange-100 transition-all text-lg pl-16"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -390,8 +390,8 @@ const RestaurantList = () => {
           ) : filteredRestaurants.length === 0 ? (
             <div className="text-center py-20 bg-white rounded-2xl border border-slate-100">
               <div className="text-6xl mb-4">🍽️</div>
-              <h3 className="text-xl font-bold text-slate-800">No restaurants found.</h3>
-              <p className="text-slate-500">Try adjusting your search terms or filters.</p>
+              <h3 className="text-xl font-bold text-slate-800">レストランが見つかりません。</h3>
+              <p className="text-slate-500">検索条件やフィルターを変更してみてください。</p>
             </div>
           ) : (
             <div className="space-y-6">

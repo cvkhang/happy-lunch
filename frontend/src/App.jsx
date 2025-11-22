@@ -12,7 +12,7 @@ function App() {
           {/* Top Row */}
           <div className="container mx-auto px-6 py-4 flex justify-between items-center">
             <Link to="/" className="flex items-center group">
-              <span className="text-3xl mr-2 transform group-hover:scale-110 transition-transform duration-300">🍱</span>
+              <img src="/logo.png" alt="Happy Lunch Logo" className="h-10 w-10 mr-2 transform group-hover:scale-110 transition-transform duration-300" />
               <div className="text-2xl font-extrabold bg-gradient-to-r from-orange-500 to-red-600 bg-clip-text text-transparent tracking-tight">
                 Happy Lunch
               </div>
