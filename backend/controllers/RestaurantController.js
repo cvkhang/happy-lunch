@@ -1,33 +1,11 @@
-const Restaurant = require('../models/Restaurant');
-const MenuItem = require('../models/MenuItem');
-const Review = require('../models/Review');
-const { Op } = require('sequelize');
+const { restaurantRepository } = require('../repositories');
 
 class RestaurantController {
   // GET /api/restaurants - Get all restaurants or search
   async getAllRestaurants(req, res) {
     try {
       const { search } = req.query;
-      let whereClause = {};
-
-      if (search) {
-        whereClause = {
-          [Op.or]: [
-            { name: { [Op.iLike]: `%${search}%` } },
-            { address: { [Op.iLike]: `%${search}%` } },
-            { cuisine_type: { [Op.iLike]: `%${search}%` } }
-          ]
-        };
-      }
-
-      const restaurants = await Restaurant.findAll({
-        where: whereClause,
-        include: [
-          { model: MenuItem },
-          { model: Review }
-        ],
-        order: [['createdAt', 'DESC']]
-      });
+      const restaurants = await restaurantRepository.findAll({ search });
 
       res.json(restaurants);
     } catch (error) {
@@ -40,12 +18,7 @@ class RestaurantController {
   async getRestaurantById(req, res) {
     try {
       const { id } = req.params;
-      const restaurant = await Restaurant.findByPk(id, {
-        include: [
-          { model: MenuItem },
-          { model: Review }
-        ]
-      });
+      const restaurant = await restaurantRepository.findById(id);
 
       if (!restaurant) {
         return res.status(404).json({ error: 'Restaurant not found' });
@@ -68,7 +41,7 @@ class RestaurantController {
         return res.status(400).json({ error: 'Name and address are required' });
       }
 
-      const newRestaurant = await Restaurant.create(restaurantData);
+      const newRestaurant = await restaurantRepository.create(restaurantData);
       res.status(201).json(newRestaurant);
     } catch (error) {
       console.error('Error in createRestaurant:', error);
@@ -82,20 +55,12 @@ class RestaurantController {
       const { id } = req.params;
       const restaurantData = req.body;
 
-      const [updated] = await Restaurant.update(restaurantData, {
-        where: { id }
-      });
+      const updatedRestaurant = await restaurantRepository.update(id, restaurantData);
 
-      if (!updated) {
+      if (!updatedRestaurant) {
         return res.status(404).json({ error: 'Restaurant not found' });
       }
 
-      const updatedRestaurant = await Restaurant.findByPk(id, {
-        include: [
-          { model: MenuItem },
-          { model: Review }
-        ]
-      });
       res.json(updatedRestaurant);
     } catch (error) {
       console.error('Error in updateRestaurant:', error);
@@ -107,9 +72,7 @@ class RestaurantController {
   async deleteRestaurant(req, res) {
     try {
       const { id } = req.params;
-      const deleted = await Restaurant.destroy({
-        where: { id }
-      });
+      const deleted = await restaurantRepository.delete(id);
 
       if (!deleted) {
         return res.status(404).json({ error: 'Restaurant not found' });
