@@ -4,6 +4,8 @@ const config = require('./config/config');
 const restaurantRoutes = require('./routes/restaurants');
 const sequelize = require('./config/database');
 const { models } = require('./models');
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./config/swagger');
 
 const app = express();
 
@@ -11,6 +13,13 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Swagger UI
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: 'Happy Lunch API Documentation',
+}));
+
 
 // Routes
 app.use('/api/restaurants', restaurantRoutes);
@@ -43,6 +52,7 @@ const startServer = async () => {
 
     app.listen(config.PORT, () => {
       console.log(`Server is running on http://localhost:${config.PORT}`);
+      console.log(`API Documentation available at http://localhost:${config.PORT}/api-docs`);
     });
   } catch (error) {
     console.error('Unable to connect to the database:', error);
