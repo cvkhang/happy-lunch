@@ -39,6 +39,13 @@ const User = sequelize.define('User', {
   account_type: {
     type: DataTypes.ENUM('personal', 'family'),
     defaultValue: 'personal'
+  },
+  is_blocked: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  },
+  last_active_at: {
+    type: DataTypes.DATE
   }
 }, {
   tableName: 'users',

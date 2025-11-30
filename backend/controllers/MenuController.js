@@ -78,7 +78,9 @@ class MenuController {
         });
       }
 
-      const { restaurant_id, name, description, price, image_url } = req.body;
+      const { restaurant_id, name, description, price } = req.body;
+      let { image_url } = req.body;
+
 
       // Check if restaurant exists
       const restaurant = await Restaurant.findByPk(restaurant_id);
@@ -124,6 +126,7 @@ class MenuController {
       if (description !== undefined) updateData.description = description;
       if (price !== undefined) updateData.price = price;
       if (image_url !== undefined) updateData.image_url = image_url;
+
 
       const menuItem = await MenuRepository.update(id, updateData);
 

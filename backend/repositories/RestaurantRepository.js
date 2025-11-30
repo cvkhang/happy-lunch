@@ -30,6 +30,8 @@ class RestaurantRepository {
         { model: MenuItem },
         {
           model: Review,
+          where: { status: 'approved' },
+          required: false,
           include: [{ model: User, attributes: ['id', 'name', 'email'] }]
         }
       ],
@@ -50,6 +52,8 @@ class RestaurantRepository {
         { model: MenuItem },
         {
           model: Review,
+          where: { status: 'approved' },
+          required: false,
           include: [{ model: User, attributes: ['id', 'name', 'email'] }]
         }
       ]

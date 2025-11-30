@@ -112,11 +112,20 @@ class UserRepository {
     const blockedUsers = await User.count({ where: { is_blocked: true } });
     const adminUsers = await User.count({ where: { role: 'admin' } });
 
+    // Online users (active in last 5 minutes)
+    const fiveMinutesAgo = new Date(new Date() - 5 * 60 * 1000);
+    const onlineUsers = await User.count({
+      where: {
+        last_active_at: { [Op.gte]: fiveMinutesAgo }
+      }
+    });
+
     return {
       total: totalUsers,
       active: activeUsers,
       blocked: blockedUsers,
-      admins: adminUsers
+      admins: adminUsers,
+      online: onlineUsers
     };
   }
 }

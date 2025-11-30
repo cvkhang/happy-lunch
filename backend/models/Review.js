@@ -37,6 +37,10 @@ const Review = sequelize.define('Review', {
   image_urls: {
     type: DataTypes.ARRAY(DataTypes.STRING),
     defaultValue: []
+  },
+  status: {
+    type: DataTypes.ENUM('pending', 'approved', 'rejected'),
+    defaultValue: 'pending'
   }
 }, {
   tableName: 'reviews',

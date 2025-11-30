@@ -8,7 +8,11 @@ import RestaurantDetail from './components/RestaurantDetail';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Profile from './pages/Profile';
-import AdminDashboard from './pages/AdminDashboard';
+// import AdminDashboard from './pages/AdminDashboard'; // Deprecated
+import AdminLayout from './layouts/AdminLayout';
+import AdminUserList from './components/admin/AdminUserList';
+import AdminReviewList from './components/admin/AdminReviewList';
+import AdminRestaurantMenuManager from './components/admin/AdminRestaurantMenuManager';
 import WriteReview from './pages/WriteReview';
 import Welcome from './pages/Welcome';
 import { useAuthStore } from './store/authStore';
@@ -50,7 +54,14 @@ const App = () => {
           <Route path="/restaurants/:id" element={<RestaurantDetail />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/write-review" element={<WriteReview />} />
-          <Route path="/admin" element={<AdminDashboard />} />
+        </Route>
+
+        {/* Admin Routes (With Admin Header) */}
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route index element={<Navigate to="/admin/users" replace />} />
+          <Route path="users" element={<AdminUserList />} />
+          <Route path="reviews" element={<AdminReviewList />} />
+          <Route path="restaurants" element={<AdminRestaurantMenuManager />} />
         </Route>
 
         {/* Fallback */}

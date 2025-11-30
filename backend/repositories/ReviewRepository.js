@@ -6,11 +6,13 @@ class ReviewRepository {
    * Find all reviews with filters and pagination
    */
   async findAll(filters = {}) {
-    const { restaurant_id, user_id, page = 1, limit = 10 } = filters;
+    const { restaurant_id, user_id, status, page = 1, limit = 10 } = filters;
     const whereClause = {};
 
     if (restaurant_id) whereClause.restaurant_id = restaurant_id;
     if (user_id) whereClause.user_id = user_id;
+    // if (status) whereClause.status = status; // Allow all statuses for user profile
+    if (status && !user_id) whereClause.status = status; // Only filter by status if not fetching for a specific user (or adjust logic as needed)
 
     const offset = (page - 1) * limit;
 
@@ -177,14 +179,14 @@ class ReviewRepository {
    * Get reviews by restaurant
    */
   async findByRestaurant(restaurantId, page = 1, limit = 10) {
-    return await this.findAll({ restaurant_id: restaurantId, page, limit });
+    return await this.findAll({ restaurant_id: restaurantId, status: 'approved', page, limit });
   }
 
   /**
    * Get reviews by user
    */
   async findByUser(userId, page = 1, limit = 10) {
-    return await this.findAll({ user_id: userId, page, limit });
+    return await this.findAll({ user_id: userId, status: null, page, limit });
   }
 
   /**
@@ -207,11 +209,30 @@ class ReviewRepository {
   }
 
   /**
+   * Count pending reviews
+   */
+  async countPending() {
+    return await Review.count({ where: { status: 'pending' } });
+  }
+
+  /**
    * Check if review exists
    */
   async exists(id) {
     const review = await Review.findByPk(id);
     return !!review;
+  }
+
+  /**
+   * Update review status
+   */
+  async updateStatus(id, status) {
+    const review = await Review.findByPk(id);
+    if (!review) return null;
+
+    review.status = status;
+    await review.save();
+    return review;
   }
 }
 

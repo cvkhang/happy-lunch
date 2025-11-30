@@ -19,6 +19,11 @@ const auth = (req, res, next) => {
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.user = decoded;
+
+    // Update last_active_at (fire and forget)
+    const { User } = require('../models');
+    User.update({ last_active_at: new Date() }, { where: { id: req.user.id } }).catch(err => console.error('Update active error', err));
+
     next();
   } catch (error) {
     console.error('Auth middleware error:', error);
@@ -43,6 +48,7 @@ const adminAuth = (req, res, next) => {
     const token = req.header('Authorization')?.replace('Bearer ', '');
 
     if (!token) {
+      console.log('AdminAuth: No token provided');
       return res.status(401).json({
         success: false,
         message: 'No token provided, authorization denied'
@@ -52,8 +58,11 @@ const adminAuth = (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.user = decoded;
 
+    console.log(`AdminAuth: User ${req.user.id} role is ${req.user.role}`);
+
     // 2. Check Admin Role
     if (req.user.role !== 'admin') {
+      console.log('AdminAuth: Access denied. Not an admin.');
       return res.status(403).json({
         success: false,
         message: 'Access denied. Admin privileges required.'

@@ -3,7 +3,9 @@ const { body } = require('express-validator');
 const router = express.Router();
 const MenuController = require('../controllers/MenuController');
 const AdminUserController = require('../controllers/AdminUserController');
+const AdminReviewController = require('../controllers/AdminReviewController');
 const { adminAuth } = require('../middleware/auth');
+
 
 // ==================== MENU MANAGEMENT ====================
 
@@ -32,8 +34,6 @@ router.post('/menu-items',
       .trim(),
     body('image_url')
       .optional()
-      .isURL()
-      .withMessage('Please enter a valid image URL')
   ],
   MenuController.createMenuItem
 );
@@ -54,8 +54,6 @@ router.put('/menu-items/:id',
       .trim(),
     body('image_url')
       .optional()
-      .isURL()
-      .withMessage('Please enter a valid image URL')
   ],
   MenuController.updateMenuItem
 );
@@ -93,5 +91,10 @@ router.put('/users/:id/role',
   ],
   AdminUserController.updateUserRole
 );
+
+// Review Management Routes
+router.get('/reviews', adminAuth, AdminReviewController.getReviews);
+router.put('/reviews/:id/status', adminAuth, AdminReviewController.updateReviewStatus);
+router.delete('/reviews/:id', adminAuth, AdminReviewController.deleteReview);
 
 module.exports = router;

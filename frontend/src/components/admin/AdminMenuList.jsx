@@ -2,8 +2,11 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { API_BASE_URL } from '../../config/api';
 import toast from 'react-hot-toast';
+import { useAuthStore } from '../../store/authStore';
+import { supabase } from '../../config/supabase';
 
 const AdminMenuList = () => {
+  const { token } = useAuthStore();
   const [menuItems, setMenuItems] = useState([]);
   const [restaurants, setRestaurants] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -50,7 +53,6 @@ const AdminMenuList = () => {
   const fetchMenuItems = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
       let url = `${API_BASE_URL}/admin/menu-items?page=${page}&limit=10`;
       if (selectedRestaurant) {
         url += `&restaurant_id=${selectedRestaurant}`;
@@ -103,21 +105,58 @@ const AdminMenuList = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const token = localStorage.getItem('token');
       const config = { headers: { Authorization: `Bearer ${token}` } };
 
+      let imageUrl = formData.image_url;
+
+      // Upload image to Supabase if it's a File object
+      if (formData.image_url instanceof File) {
+        if (!supabase) {
+          throw new Error('システム設定エラー: 画像アップロード機能が無効です');
+        }
+
+        const file = formData.image_url;
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+        const filePath = `menu-items/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('menu-images') // Assuming a bucket for menu images
+          .upload(filePath, file);
+
+        if (uploadError) {
+          console.error('Upload error:', uploadError);
+          throw new Error(`画像のアップロードに失敗しました: ${uploadError.message}`);
+        }
+
+        const { data } = supabase.storage
+          .from('menu-images')
+          .getPublicUrl(filePath);
+
+        imageUrl = data.publicUrl;
+      }
+
+      const data = {
+        restaurant_id: formData.restaurant_id,
+        name: formData.name,
+        description: formData.description,
+        price: formData.price,
+        image_url: imageUrl
+      };
+
       if (currentMenu) {
-        await axios.put(`${API_BASE_URL}/admin/menu-items/${currentMenu.id}`, formData, config);
+        await axios.put(`${API_BASE_URL}/admin/menu-items/${currentMenu.id}`, data, config);
         toast.success('メニュー情報を更新しました');
       } else {
-        await axios.post(`${API_BASE_URL}/admin/menu-items`, formData, config);
+        await axios.post(`${API_BASE_URL}/admin/menu-items`, data, config);
         toast.success('新しいメニューを追加しました');
       }
 
       setIsEditing(false);
       fetchMenuItems();
     } catch (error) {
-      toast.error('保存に失敗しました');
+      console.error(error);
+      toast.error(error.message || '保存に失敗しました');
     }
   };
 
@@ -125,7 +164,6 @@ const AdminMenuList = () => {
     if (!window.confirm('本当に削除しますか？')) return;
 
     try {
-      const token = localStorage.getItem('token');
       await axios.delete(`${API_BASE_URL}/admin/menu-items/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -303,13 +341,40 @@ const AdminMenuList = () => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">画像URL</label>
-              <input
-                type="url"
-                value={formData.image_url}
-                onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-200 outline-none"
-              />
+              <label className="block text-sm font-medium text-slate-700 mb-1">画像</label>
+              <div className="flex items-center gap-4">
+                <div className="w-20 h-20 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center overflow-hidden shrink-0">
+                  {formData.image_url ? (
+                    <img
+                      src={typeof formData.image_url === 'string' ? formData.image_url : URL.createObjectURL(formData.image_url)}
+                      alt="Preview"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-slate-400 text-xs">No Img</span>
+                  )}
+                </div>
+                <div className="flex-1">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files[0];
+                      if (file) {
+                        setFormData({ ...formData, image_url: file });
+                      }
+                    }}
+                    className="w-full text-sm text-slate-500
+                      file:mr-4 file:py-2 file:px-4
+                      file:rounded-full file:border-0
+                      file:text-sm file:font-semibold
+                      file:bg-orange-50 file:text-orange-700
+                      hover:file:bg-orange-100
+                    "
+                  />
+                  <p className="text-xs text-slate-500 mt-1">推奨: 1MB以下のJPG/PNG</p>
+                </div>
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">説明</label>

@@ -36,6 +36,7 @@ class RestaurantController {
     try {
       const restaurantData = req.body;
 
+
       // Basic validation
       if (!restaurantData.name || !restaurantData.address) {
         return res.status(400).json({ error: 'Name and address are required' });
@@ -54,6 +55,7 @@ class RestaurantController {
     try {
       const { id } = req.params;
       const restaurantData = req.body;
+
 
       const updatedRestaurant = await restaurantRepository.update(id, restaurantData);
 

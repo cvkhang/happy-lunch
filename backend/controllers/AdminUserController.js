@@ -1,4 +1,5 @@
 const UserRepository = require('../repositories/UserRepository');
+const ReviewRepository = require('../repositories/ReviewRepository');
 
 class AdminUserController {
   /**
@@ -175,10 +176,14 @@ class AdminUserController {
   async getUserStats(req, res) {
     try {
       const stats = await UserRepository.getStats();
+      const pendingReviews = await ReviewRepository.countPending();
 
       res.json({
         success: true,
-        stats
+        stats: {
+          ...stats,
+          pendingReviews
+        }
       });
     } catch (error) {
       console.error('Get user stats error:', error);

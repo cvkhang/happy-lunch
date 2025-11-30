@@ -3,13 +3,8 @@ const { body } = require('express-validator');
 const router = express.Router();
 const ReviewController = require('../controllers/ReviewController');
 const { auth, optionalAuth } = require('../middleware/auth');
-
-
-// Get all reviews (with optional auth for like status)
+// Get all reviews (optional auth for like status)
 router.get('/', optionalAuth, ReviewController.getAllReviews);
-
-// Get review by ID
-router.get('/:id', optionalAuth, ReviewController.getReviewById);
 
 // Create review (requires auth)
 router.post('/',
@@ -53,6 +48,9 @@ router.put('/:id',
 
 // Delete review (requires auth)
 router.delete('/:id', auth, ReviewController.deleteReview);
+
+// Get review by ID (optional auth for like status)
+router.get('/:id', optionalAuth, ReviewController.getReviewById);
 
 // Like review (requires auth)
 router.post('/:id/like', auth, ReviewController.likeReview);

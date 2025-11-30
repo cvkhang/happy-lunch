@@ -2,23 +2,17 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { API_BASE_URL } from '../../config/api';
 import toast from 'react-hot-toast';
+import RestaurantDetailModal from './RestaurantDetailModal';
+import RestaurantEditModal from './RestaurantEditModal';
 
 const AdminRestaurantList = () => {
   const [restaurants, setRestaurants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [currentRestaurant, setCurrentRestaurant] = useState(null);
+  const [selectedRestaurant, setSelectedRestaurant] = useState(null);
 
-  // Form state
-  const [formData, setFormData] = useState({
-    name: '',
-    address: '',
-    phone: '',
-    opening_hours: '',
-    description: '',
-    image_url: '',
-    cuisine_type: ''
-  });
+  const [sortConfig, setSortConfig] = useState({ key: 'id', direction: 'asc' });
 
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -38,7 +32,7 @@ const AdminRestaurantList = () => {
       if (debouncedSearch) params.append('search', debouncedSearch);
 
       const response = await axios.get(`${API_BASE_URL}/restaurants?${params.toString()}`);
-      setRestaurants(response.data);
+      setRestaurants(Array.isArray(response.data) ? response.data : []);
       setLoading(false);
     } catch (error) {
       toast.error('レストランリストの取得に失敗しました');
@@ -52,51 +46,12 @@ const AdminRestaurantList = () => {
 
   const handleEdit = (restaurant) => {
     setCurrentRestaurant(restaurant);
-    setFormData({
-      name: restaurant.name,
-      address: restaurant.address,
-      phone: restaurant.phone || '',
-      opening_hours: restaurant.opening_hours || '',
-      description: restaurant.description || '',
-      image_url: restaurant.image_url || '',
-      cuisine_type: restaurant.cuisine_type || ''
-    });
     setIsEditing(true);
   };
 
   const handleCreate = () => {
     setCurrentRestaurant(null);
-    setFormData({
-      name: '',
-      address: '',
-      phone: '',
-      opening_hours: '',
-      description: '',
-      image_url: '',
-      cuisine_type: ''
-    });
     setIsEditing(true);
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const token = localStorage.getItem('token');
-      const config = { headers: { Authorization: `Bearer ${token}` } };
-
-      if (currentRestaurant) {
-        await axios.put(`${API_BASE_URL}/restaurants/${currentRestaurant.id}`, formData, config);
-        toast.success('レストラン情報を更新しました');
-      } else {
-        await axios.post(`${API_BASE_URL}/restaurants`, formData, config);
-        toast.success('新しいレストランを追加しました');
-      }
-
-      setIsEditing(false);
-      fetchRestaurants();
-    } catch (error) {
-      toast.error('保存に失敗しました');
-    }
   };
 
   const handleDelete = async (id) => {
@@ -114,191 +69,166 @@ const AdminRestaurantList = () => {
     }
   };
 
+  const handleSort = (key) => {
+    let direction = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const sortedRestaurants = React.useMemo(() => {
+    let sortableItems = Array.isArray(restaurants) ? [...restaurants] : [];
+    if (sortConfig.key !== null) {
+      sortableItems.sort((a, b) => {
+        let aValue = a[sortConfig.key];
+        let bValue = b[sortConfig.key];
+
+        // Handle numeric values specifically if needed, but JS sort works okay for simple types usually.
+        // For rating, ensure it's treated as number
+        if (sortConfig.key === 'rating') {
+          aValue = Number(aValue);
+          bValue = Number(bValue);
+        }
+
+        if (aValue < bValue) {
+          return sortConfig.direction === 'asc' ? -1 : 1;
+        }
+        if (aValue > bValue) {
+          return sortConfig.direction === 'asc' ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+    return sortableItems;
+  }, [restaurants, sortConfig]);
+
+  const getSortIcon = (key) => {
+    if (sortConfig.key !== key) return <span className="text-slate-300 ml-1">↕</span>;
+    return sortConfig.direction === 'asc' ? <span className="text-orange-500 ml-1">↑</span> : <span className="text-orange-500 ml-1">↓</span>;
+  };
+
   if (loading) return <div className="text-center py-10">読み込み中...</div>;
 
   return (
     <div>
-      {!isEditing ? (
-        <div className="space-y-4">
-          <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex justify-between items-center gap-4">
-            <div className="flex-1">
-              <input
-                type="text"
-                placeholder="レストラン名で検索..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-200 outline-none"
-              />
-            </div>
-            <button
-              onClick={handleCreate}
-              className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors text-sm font-medium whitespace-nowrap"
-            >
-              + 新規追加
-            </button>
+      <div className="space-y-4">
+        {/* ... (search bar remains same) */}
+        <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex justify-between items-center gap-4">
+          <div className="flex-1">
+            <input
+              type="text"
+              placeholder="レストラン名で検索..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-200 outline-none"
+            />
           </div>
+          <button
+            onClick={handleCreate}
+            className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors text-sm font-medium whitespace-nowrap"
+          >
+            + 新規追加
+          </button>
+        </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-            <div className="p-4 border-b border-slate-200">
-              <h3 className="font-bold text-slate-700">レストラン一覧</h3>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 text-sm uppercase tracking-wider">
-                    <th className="p-4 font-semibold">ID</th>
-                    <th className="p-4 font-semibold">画像</th>
-                    <th className="p-4 font-semibold">店名</th>
-                    <th className="p-4 font-semibold">住所</th>
-                    <th className="p-4 font-semibold">評価</th>
-                    <th className="p-4 font-semibold text-right">アクション</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {restaurants.length > 0 ? (
-                    restaurants.map((restaurant) => (
-                      <tr key={restaurant.id} className="hover:bg-slate-50 transition-colors">
-                        <td className="p-4 text-slate-500">#{restaurant.id}</td>
-                        <td className="p-4">
-                          <div className="w-12 h-12 rounded-lg bg-slate-100 overflow-hidden">
-                            {restaurant.image_url ? (
-                              <img src={restaurant.image_url} alt="" className="w-full h-full object-cover" />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center text-slate-300 text-xs">No Img</div>
-                            )}
-                          </div>
-                        </td>
-                        <td className="p-4 font-medium text-slate-800">{restaurant.name}</td>
-                        <td className="p-4 text-slate-600 text-sm max-w-xs truncate">{restaurant.address}</td>
-                        <td className="p-4 text-orange-500 font-medium">★ {Number(restaurant.rating).toFixed(1)}</td>
-                        <td className="p-4 text-right space-x-2">
-                          <button
-                            onClick={() => handleEdit(restaurant)}
-                            className="text-sm font-medium text-blue-600 hover:text-blue-800"
-                          >
-                            編集
-                          </button>
-                          <button
-                            onClick={() => handleDelete(restaurant.id)}
-                            className="text-sm font-medium text-red-600 hover:text-red-800"
-                          >
-                            削除
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan="6" className="p-8 text-center text-slate-500">
-                        レストランが見つかりませんでした
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+          <div className="p-4 border-b border-slate-200">
+            <h3 className="font-bold text-slate-700">レストラン一覧</h3>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 text-sm uppercase tracking-wider">
+                  <th
+                    className="p-4 font-semibold cursor-pointer hover:bg-slate-100 transition-colors select-none"
+                    onClick={() => handleSort('id')}
+                  >
+                    ID {getSortIcon('id')}
+                  </th>
+                  <th className="p-4 font-semibold">画像</th>
+                  <th
+                    className="p-4 font-semibold cursor-pointer hover:bg-slate-100 transition-colors select-none"
+                    onClick={() => handleSort('name')}
+                  >
+                    店名 {getSortIcon('name')}
+                  </th>
+                  <th className="p-4 font-semibold">住所</th>
+                  <th
+                    className="p-4 font-semibold cursor-pointer hover:bg-slate-100 transition-colors select-none"
+                    onClick={() => handleSort('rating')}
+                  >
+                    評価 {getSortIcon('rating')}
+                  </th>
+                  <th className="p-4 font-semibold text-right">アクション</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {sortedRestaurants.length > 0 ? (
+                  sortedRestaurants.map((restaurant) => (
+                    <tr key={restaurant.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="p-4 text-slate-500">#{restaurant.id}</td>
+                      <td className="p-4">
+                        <div className="w-12 h-12 rounded-lg bg-slate-100 overflow-hidden">
+                          {restaurant.image_url ? (
+                            <img src={restaurant.image_url} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-slate-300 text-xs">No Img</div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="p-4 font-medium text-slate-800">{restaurant.name}</td>
+                      <td className="p-4 text-slate-600 text-sm max-w-xs truncate">{restaurant.address}</td>
+                      <td className="p-4 text-orange-500 font-medium">★ {Number(restaurant.rating).toFixed(1)}</td>
+                      <td className="p-4 text-right space-x-2">
+                        <button
+                          onClick={() => setSelectedRestaurant(restaurant)}
+                          className="text-sm font-medium text-blue-600 hover:text-blue-800"
+                        >
+                          詳細
+                        </button>
+                        <button
+                          onClick={() => handleDelete(restaurant.id)}
+                          className="text-sm font-medium text-red-600 hover:text-red-800"
+                        >
+                          削除
+                        </button>
                       </td>
                     </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="6" className="p-8 text-center text-slate-500">
+                      レストランが見つかりませんでした
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
-      ) : (
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-xl font-bold text-slate-800">
-              {currentRestaurant ? 'レストラン編集' : '新規レストラン追加'}
-            </h3>
-            <button
-              onClick={() => setIsEditing(false)}
-              className="text-slate-500 hover:text-slate-700"
-            >
-              キャンセル
-            </button>
-          </div>
+      </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4 max-w-2xl">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">店名</label>
-              <input
-                type="text"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-200 outline-none"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">住所</label>
-              <input
-                type="text"
-                value={formData.address}
-                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-200 outline-none"
-                required
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">電話番号</label>
-                <input
-                  type="text"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-200 outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">営業時間</label>
-                <input
-                  type="text"
-                  value={formData.opening_hours}
-                  onChange={(e) => setFormData({ ...formData, opening_hours: e.target.value })}
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-200 outline-none"
-                />
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">料理ジャンル</label>
-              <input
-                type="text"
-                value={formData.cuisine_type}
-                onChange={(e) => setFormData({ ...formData, cuisine_type: e.target.value })}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-200 outline-none"
-                placeholder="例: 日本料理, イタリアン"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">画像URL</label>
-              <input
-                type="url"
-                value={formData.image_url}
-                onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-200 outline-none"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">説明</label>
-              <textarea
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-200 outline-none h-32"
-              />
-            </div>
+      {/* Detail Modal */}
+      {selectedRestaurant && (
+        <RestaurantDetailModal
+          restaurant={selectedRestaurant}
+          onClose={() => setSelectedRestaurant(null)}
+          onEdit={handleEdit}
+        />
+      )}
 
-            <div className="pt-4 flex justify-end space-x-3">
-              <button
-                type="button"
-                onClick={() => setIsEditing(false)}
-                className="px-6 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 font-medium"
-              >
-                キャンセル
-              </button>
-              <button
-                type="submit"
-                className="px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 font-medium shadow-sm"
-              >
-                保存する
-              </button>
-            </div>
-          </form>
-        </div>
+      {/* Edit/Create Modal */}
+      {isEditing && (
+        <RestaurantEditModal
+          restaurant={currentRestaurant}
+          onClose={() => setIsEditing(false)}
+          onSuccess={() => {
+            fetchRestaurants();
+            // If we were editing a selected restaurant (from details modal), update it too if needed
+            // But for now, fetchRestaurants refreshes the list.
+          }}
+        />
       )}
     </div>
   );

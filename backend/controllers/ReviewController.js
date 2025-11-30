@@ -9,7 +9,8 @@ class ReviewController {
         restaurant_id: req.query.restaurant_id,
         user_id: req.query.user_id,
         page: req.query.page || 1,
-        limit: req.query.limit || 10
+        limit: req.query.limit || 10,
+        status: req.query.user_id ? null : 'approved' // Show all reviews for user profile, otherwise only approved
       };
 
       const result = await ReviewRepository.findAll(filters);
@@ -81,8 +82,10 @@ class ReviewController {
         });
       }
 
-      const { restaurant_id, rating, comment, image_urls } = req.body;
+      const { restaurant_id, rating, comment } = req.body;
+      let { image_urls } = req.body;
       const user_id = req.user.id;
+
 
       // Check if restaurant exists
       const restaurant = await Restaurant.findByPk(restaurant_id);
@@ -118,7 +121,8 @@ class ReviewController {
   async updateReview(req, res) {
     try {
       const { id } = req.params;
-      const { rating, comment, image_urls } = req.body;
+      const { rating, comment } = req.body;
+      let { image_urls } = req.body;
 
       // Check ownership
       const isOwner = await ReviewRepository.isOwner(id, req.user.id);
@@ -132,6 +136,8 @@ class ReviewController {
       const updateData = {};
       if (rating) updateData.rating = rating;
       if (comment !== undefined) updateData.comment = comment;
+
+
       if (image_urls !== undefined) updateData.image_urls = image_urls;
 
       const review = await ReviewRepository.update(id, updateData);
