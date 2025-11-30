@@ -34,8 +34,9 @@ const Review = sequelize.define('Review', {
   comment: {
     type: DataTypes.TEXT
   },
-  image_url: {
-    type: DataTypes.STRING
+  image_urls: {
+    type: DataTypes.ARRAY(DataTypes.STRING),
+    defaultValue: []
   }
 }, {
   tableName: 'reviews',

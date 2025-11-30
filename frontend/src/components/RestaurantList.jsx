@@ -49,7 +49,7 @@ const RestaurantList = () => {
       setShowSuccessBanner(true);
       const timer = setTimeout(() => {
         setShowSuccessBanner(false);
-      }, 5000); // Hide after 5 seconds
+      }, 1500); // Hide after 5 seconds
 
       return () => clearTimeout(timer);
     }
@@ -80,7 +80,7 @@ const RestaurantList = () => {
   useEffect(() => {
     const fetchRestaurants = async () => {
       try {
-        const response = await axios.get(`${API_BASE_URL}/api/restaurants?search=${searchTerm}`);
+        const response = await axios.get(`${API_BASE_URL}/restaurants?search=${searchTerm}`);
         setRestaurants(response.data);
         setLoading(false);
       } catch (err) {

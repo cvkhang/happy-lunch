@@ -38,7 +38,6 @@ export const FILTER_OPTIONS = {
   // Distance filters (requires user location)
   distanceFilters: [
     { value: 'near', label: '3km以内', icon: '📍', maxDistance: 3 },
-    { value: 'far', label: '3km以上', icon: '🚗', minDistance: 3 }
   ]
 };
 

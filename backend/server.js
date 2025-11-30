@@ -1,7 +1,12 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const config = require('./config/config');
 const restaurantRoutes = require('./routes/restaurants');
+const authRoutes = require('./routes/auth');
+const reviewRoutes = require('./routes/reviews');
+const favoriteRoutes = require('./routes/favorites');
+const adminRoutes = require('./routes/admin');
 const sequelize = require('./config/database');
 const { models } = require('./models');
 const swaggerUi = require('swagger-ui-express');
@@ -23,6 +28,10 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
 
 // Routes
 app.use('/api/restaurants', restaurantRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/reviews', reviewRoutes);
+app.use('/api/favorites', favoriteRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {

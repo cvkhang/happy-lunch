@@ -77,7 +77,7 @@ const RestaurantCard = ({ restaurant }) => {
         </div>
 
         <div className="mt-auto">
-          <Link to={`/restaurant/${restaurant.id}`} className="block w-full bg-gradient-to-r from-orange-500 to-red-600 text-white font-semibold text-center py-2 rounded-xl shadow-md hover:shadow-lg hover:from-orange-600 hover:to-red-700 transform hover:-translate-y-0.5 transition-all text-sm">
+          <Link to={`/restaurants/${restaurant.id}`} className="block w-full bg-gradient-to-r from-orange-500 to-red-600 text-white font-semibold text-center py-2 rounded-xl shadow-md hover:shadow-lg hover:from-orange-600 hover:to-red-700 transform hover:-translate-y-0.5 transition-all text-sm">
             詳細を見たいですか
           </Link>
         </div>

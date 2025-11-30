@@ -2,30 +2,75 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import { API_BASE_URL } from '../config/api';
+import ReviewList from './ReviewList';
+import ReviewForm from './ReviewForm';
+import { useAuthStore } from '../store/authStore';
+import toast from 'react-hot-toast';
 
 const RestaurantDetail = () => {
   const { id } = useParams();
+  const { user } = useAuthStore();
   const [restaurant, setRestaurant] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isFavorite, setIsFavorite] = useState(false);
 
-  useEffect(() => {
-    const fetchRestaurant = async () => {
-      window.scrollTo(0, 0);
-      try {
-        const response = await axios.get(`${API_BASE_URL}/api/restaurants/${id}`);
-        setRestaurant(response.data);
-        setLoading(false);
-      } catch (err) {
-        console.error("Error fetching restaurant details:", err);
-        setError("レストランの詳細を読み込めませんでした。");
-        setLoading(false);
-      }
-    };
+  const [showReviewForm, setShowReviewForm] = useState(false);
 
+  const fetchRestaurant = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/restaurants/${id}`);
+      setRestaurant(response.data);
+      setLoading(false);
+
+      // Check favorite status if user is logged in
+      if (user) {
+        try {
+          const token = localStorage.getItem('token');
+          const favResponse = await axios.get(`${API_BASE_URL}/favorites/check/${id}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          // Fix: Backend returns is_favorite, not isFavorited
+          setIsFavorite(favResponse.data.is_favorite);
+        } catch (favErr) {
+          console.error("Error checking favorite status:", favErr);
+          // Don't block the page if favorite check fails
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching restaurant details:", err);
+      setError("レストランの詳細を読み込めませんでした。");
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
     fetchRestaurant();
-  }, [id]);
+  }, [id, user]);
+
+  const handleToggleFavorite = async () => {
+    if (!user) {
+      toast.error('ログインが必要です');
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+
+      if (isFavorite) {
+        await axios.delete(`${API_BASE_URL}/favorites/${id}`, config);
+        toast.success('お気に入りから削除しました');
+      } else {
+        await axios.post(`${API_BASE_URL}/favorites`, { restaurant_id: id }, config);
+        toast.success('お気に入りに追加しました');
+      }
+      setIsFavorite(!isFavorite);
+    } catch (error) {
+      toast.error('エラーが発生しました');
+    }
+  };
 
   if (loading) return (
     <div className="flex justify-center items-center min-h-screen">
@@ -44,8 +89,9 @@ const RestaurantDetail = () => {
           <div className="flex justify-between items-start mb-4">
             <h1 className="text-3xl font-bold text-slate-800">{restaurant.name}</h1>
             <button
-              onClick={() => setIsFavorite(!isFavorite)}
+              onClick={handleToggleFavorite}
               className="p-2 rounded-full hover:bg-red-50 transition-colors"
+              title={isFavorite ? "お気に入りから削除" : "お気に入りに追加"}
             >
               <svg className={`w-7 h-7 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-slate-400'}`} fill={isFavorite ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
@@ -115,62 +161,42 @@ const RestaurantDetail = () => {
         {/* Reviews Section */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 mb-8">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-slate-800">レビュー</h2>
-            <button className="bg-slate-700 hover:bg-slate-800 text-white px-6 py-2 rounded-lg font-medium transition-colors">
-              貢献したいですか？
-            </button>
-          </div>
-
-          <div className="space-y-4">
-            {restaurant.Reviews && restaurant.Reviews.length > 0 ? (
-              restaurant.Reviews.map((review, index) => (
-                <div key={index} className="border border-slate-200 rounded-xl p-4">
-                  <div className="flex gap-4">
-                    <div className="flex-shrink-0">
-                      <div className="w-16 h-16 bg-slate-100 rounded-lg flex items-center justify-center">
-                        <svg className="w-full h-full text-slate-300" viewBox="0 0 100 100" preserveAspectRatio="none">
-                          <line x1="0" y1="0" x2="100" y2="100" stroke="currentColor" strokeWidth="1" />
-                          <line x1="0" y1="100" x2="100" y2="0" stroke="currentColor" strokeWidth="1" />
-                        </svg>
-                      </div>
-                    </div>
-                    <div className="flex-grow">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-3">
-                          <span className="font-semibold text-slate-700">{review.user_id || '匿名'}</span>
-                          <div className="flex text-yellow-400 text-sm">
-                            {[...Array(5)].map((_, i) => (
-                              <span key={i}>{i < (review.rating || 5) ? '★' : '☆'}</span>
-                            ))}
-                          </div>
-                        </div>
-                        <button className="flex items-center gap-1 p-1 hover:bg-red-50 rounded-full transition-colors group">
-                          <svg className="w-5 h-5 text-slate-400 group-hover:text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
-                          </svg>
-                          <span className="text-xs text-slate-500">{review.likes || 0}</span>
-                        </button>
-                      </div>
-                      <p className="text-slate-700 leading-relaxed">{review.comment || review}</p>
-                    </div>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <p className="text-slate-400 text-center py-8">まだレビューがありません</p>
-            )}
-          </div>
-
-          {restaurant.Reviews && restaurant.Reviews.length > 0 && (
-            <div className="mt-6 text-center">
-              <button className="text-orange-600 hover:text-orange-700 font-medium flex items-center mx-auto">
-                <span>もっと見る</span>
-                <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
+            <div className="flex items-center gap-4">
+              <h2 className="text-2xl font-bold text-slate-800">レビュー</h2>
+              <button
+                onClick={() => setShowReviewForm(!showReviewForm)}
+                className="px-4 py-2 bg-orange-50 text-orange-600 rounded-full text-sm font-semibold hover:bg-orange-100 transition-colors flex items-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                 </svg>
+                貢献しませんか？
               </button>
             </div>
-          )}
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Review Form - Conditionally Rendered */}
+            {showReviewForm && (
+              <div className="lg:col-span-1 animate-fade-in">
+                <ReviewForm
+                  restaurantId={id}
+                  onReviewAdded={() => {
+                    fetchRestaurant();
+                    setShowReviewForm(false); // Hide form after submission
+                  }}
+                />
+              </div>
+            )}
+
+            {/* Review List */}
+            <div className={showReviewForm ? "lg:col-span-2" : "lg:col-span-3"}>
+              <ReviewList
+                reviews={restaurant.Reviews}
+                onReviewUpdated={fetchRestaurant}
+              />
+            </div>
+          </div>
         </div>
       </div>
     </div>

@@ -1,4 +1,4 @@
-# スプリントバックログ (Sprint Backlog)
+# スプリントバックログ (Sprint 1 Backlog)
 
 **期間 (Thời gian):** 2025/11/19 〜 2025/11/25
 

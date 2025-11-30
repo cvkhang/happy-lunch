@@ -1,6 +1,7 @@
 const Restaurant = require('../models/Restaurant');
 const MenuItem = require('../models/MenuItem');
 const Review = require('../models/Review');
+const User = require('../models/User');
 const { Op } = require('sequelize');
 
 class RestaurantRepository {
@@ -27,7 +28,10 @@ class RestaurantRepository {
       where: whereClause,
       include: [
         { model: MenuItem },
-        { model: Review }
+        {
+          model: Review,
+          include: [{ model: User, attributes: ['id', 'name', 'email'] }]
+        }
       ],
       order: [['createdAt', 'DESC']]
     });
@@ -44,7 +48,10 @@ class RestaurantRepository {
     const restaurant = await Restaurant.findByPk(id, {
       include: [
         { model: MenuItem },
-        { model: Review }
+        {
+          model: Review,
+          include: [{ model: User, attributes: ['id', 'name', 'email'] }]
+        }
       ]
     });
 
