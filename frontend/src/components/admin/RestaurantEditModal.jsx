@@ -65,6 +65,16 @@ const LocationMarker = ({ position, setPosition }) => {
   return position ? <Marker position={position} /> : null;
 };
 
+const MapUpdater = ({ position }) => {
+  const map = useMap();
+  useEffect(() => {
+    if (position) {
+      map.flyTo(position, 15);
+    }
+  }, [position, map]);
+  return null;
+};
+
 const RestaurantEditModal = ({ restaurant, onClose, onSuccess }) => {
   const { token } = useAuthStore();
   const [formData, setFormData] = useState({
@@ -128,6 +138,12 @@ const RestaurantEditModal = ({ restaurant, onClose, onSuccess }) => {
   const handleRemoveTimeRange = (index) => {
     const newRanges = timeRanges.filter((_, i) => i !== index);
     setTimeRanges(newRanges.length > 0 ? newRanges : [{ open: '', close: '' }]);
+  };
+
+  const handleTimeChange = (index, field, value) => {
+    const newRanges = [...timeRanges];
+    newRanges[index][field] = value;
+    setTimeRanges(newRanges);
   };
 
   const handleSubmit = async (e) => {
@@ -259,14 +275,16 @@ const RestaurantEditModal = ({ restaurant, onClose, onSuccess }) => {
                         type="time"
                         value={range.open}
                         onChange={(e) => handleTimeChange(index, 'open', e.target.value)}
-                        className="w-full px-2 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-200 outline-none text-sm"
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-full px-2 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-200 outline-none text-sm bg-white"
                       />
                       <span className="text-slate-500">~</span>
                       <input
                         type="time"
                         value={range.close}
                         onChange={(e) => handleTimeChange(index, 'close', e.target.value)}
-                        className="w-full px-2 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-200 outline-none text-sm"
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-full px-2 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-200 outline-none text-sm bg-white"
                       />
                       {timeRanges.length > 1 && (
                         <button
@@ -348,7 +366,11 @@ const RestaurantEditModal = ({ restaurant, onClose, onSuccess }) => {
               <label className="block text-sm font-medium text-slate-700 mb-2">位置情報 (地図をクリックして選択)</label>
               <div className="h-64 rounded-xl overflow-hidden border border-slate-300 mb-2">
                 <MapContainer
-                  center={formData.latitude && formData.longitude ? [formData.latitude, formData.longitude] : [21.0070, 105.8430]}
+                  center={
+                    formData.latitude && formData.longitude
+                      ? [parseFloat(formData.latitude), parseFloat(formData.longitude)]
+                      : [21.0070, 105.8430]
+                  }
                   zoom={15}
                   style={{ height: '100%', width: '100%' }}
                 >
@@ -358,9 +380,18 @@ const RestaurantEditModal = ({ restaurant, onClose, onSuccess }) => {
                   />
                   <SearchControl setPosition={handleMapClick} />
                   <LocationMarker
-                    position={formData.latitude && formData.longitude ? [formData.latitude, formData.longitude] : null}
+                    position={
+                      formData.latitude && formData.longitude
+                        ? [parseFloat(formData.latitude), parseFloat(formData.longitude)]
+                        : null
+                    }
                     setPosition={handleMapClick}
                   />
+                  <MapUpdater position={
+                    formData.latitude && formData.longitude
+                      ? [parseFloat(formData.latitude), parseFloat(formData.longitude)]
+                      : null
+                  } />
                 </MapContainer>
               </div>
               <div className="grid grid-cols-2 gap-4">
