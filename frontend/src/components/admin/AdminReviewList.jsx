@@ -76,8 +76,8 @@ const AdminReviewList = () => {
               key={status}
               onClick={() => { setStatusFilter(status); setPage(1); }}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${statusFilter === status
-                  ? 'bg-slate-800 text-white'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                ? 'bg-slate-800 text-white'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
             >
               {status === 'pending' && '承認待ち'}
@@ -102,7 +102,7 @@ const AdminReviewList = () => {
                     <div className="flex justify-between items-start mb-4">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-slate-200 overflow-hidden">
-                          {review.User?.avatar_url ? (
+                          {review.User && review.User.avatar_url ? (
                             <img src={review.User.avatar_url} alt={review.User.name} className="w-full h-full object-cover" />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-slate-500 font-bold">
@@ -116,8 +116,8 @@ const AdminReviewList = () => {
                         </div>
                       </div>
                       <span className={`px-3 py-1 rounded-full text-xs font-bold ${review.status === 'approved' ? 'bg-green-100 text-green-700' :
-                          review.status === 'rejected' ? 'bg-red-100 text-red-700' :
-                            'bg-orange-100 text-orange-700'
+                        review.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                          'bg-orange-100 text-orange-700'
                         }`}>
                         {review.status === 'approved' ? '承認済み' :
                           review.status === 'rejected' ? '却下済み' : '承認待ち'}
@@ -132,6 +132,16 @@ const AdminReviewList = () => {
                           @ {review.Restaurant?.name}
                         </span>
                       </div>
+                      {/* Dish Names */}
+                      {review.dish_names && review.dish_names.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mb-2">
+                          {review.dish_names.map((dish, index) => (
+                            <span key={index} className="px-2 py-0.5 bg-orange-50 text-orange-700 rounded-full text-xs font-medium border border-orange-100">
+                              {dish}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                       <p className="text-slate-700 whitespace-pre-wrap">{review.comment}</p>
                     </div>
 

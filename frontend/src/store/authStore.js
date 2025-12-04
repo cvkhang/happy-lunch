@@ -142,6 +142,26 @@ export const useAuthStore = create(
         }
       },
 
+      // Update avatar
+      updateAvatar: async (avatarUrl) => {
+        set({ isLoading: true, error: null });
+        try {
+          const response = await axios.put(`${API_URL}/auth/profile`, { avatar_url: avatarUrl });
+
+          set({
+            user: response.data.user,
+            isLoading: false,
+            error: null
+          });
+
+          return { success: true, message: response.data.message };
+        } catch (error) {
+          const message = error.response?.data?.message || 'Failed to update avatar';
+          set({ isLoading: false, error: message });
+          return { success: false, message };
+        }
+      },
+
       // Initialize auth from stored token
       initAuth: () => {
         const { token } = get();

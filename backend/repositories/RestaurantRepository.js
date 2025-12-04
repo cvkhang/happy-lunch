@@ -1,7 +1,4 @@
-const Restaurant = require('../models/Restaurant');
-const MenuItem = require('../models/MenuItem');
-const Review = require('../models/Review');
-const User = require('../models/User');
+const { Restaurant, MenuItem, Review, User } = require('../models');
 const { Op } = require('sequelize');
 
 class RestaurantRepository {
@@ -32,7 +29,7 @@ class RestaurantRepository {
           model: Review,
           where: { status: 'approved' },
           required: false,
-          include: [{ model: User, attributes: ['id', 'name', 'email'] }]
+          include: [{ model: User, attributes: ['id', 'name', 'email', 'avatar_url'] }]
         }
       ],
       order: [['createdAt', 'DESC']]
@@ -54,10 +51,11 @@ class RestaurantRepository {
           model: Review,
           where: { status: 'approved' },
           required: false,
-          include: [{ model: User, attributes: ['id', 'name', 'email'] }]
+          include: [{ model: User, attributes: ['id', 'name', 'email', 'avatar_url'] }]
         }
       ]
     });
+
 
     return restaurant;
   }

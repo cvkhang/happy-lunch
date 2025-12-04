@@ -5,9 +5,10 @@ import axios from 'axios';
 import { API_BASE_URL } from '../config/api';
 import toast from 'react-hot-toast';
 import ReviewList from '../components/ReviewList';
+import AvatarUpload from '../components/AvatarUpload';
 
 const Profile = () => {
-  const { user, isAuthenticated, logout, changePassword, updateProfile, token } = useAuthStore();
+  const { user, isAuthenticated, logout, changePassword, updateProfile, updateAvatar, token } = useAuthStore();
   const navigate = useNavigate();
 
   // Reviews state
@@ -116,6 +117,13 @@ const Profile = () => {
     }
   };
 
+  const handleAvatarUpdate = async (avatarUrl) => {
+    const result = await updateAvatar(avatarUrl);
+    if (!result.success) {
+      throw new Error(result.message);
+    }
+  };
+
   if (!user) return null;
 
   return (
@@ -128,11 +136,11 @@ const Profile = () => {
           <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
             <div className="bg-gradient-to-r from-orange-500 to-red-600 h-28 relative">
               <div className="absolute -bottom-10 left-1/2 transform -translate-x-1/2">
-                <div className="w-20 h-20 bg-white rounded-full p-1 shadow-lg">
-                  <div className="w-full h-full bg-orange-50 rounded-full flex items-center justify-center text-2xl font-bold text-orange-600">
-                    {user.name.charAt(0).toUpperCase()}
-                  </div>
-                </div>
+                <AvatarUpload
+                  currentAvatar={user.avatar_url}
+                  userName={user.name}
+                  onAvatarUpdate={handleAvatarUpdate}
+                />
               </div>
             </div>
 

@@ -22,7 +22,11 @@ router.post('/',
     body('image_urls')
       .optional()
       .isArray()
-      .withMessage('Image URLs must be an array')
+      .withMessage('Image URLs must be an array'),
+    body('dish_names')
+      .optional()
+      .isArray()
+      .withMessage('Dish names must be an array')
   ],
   ReviewController.createReview
 );
@@ -41,7 +45,11 @@ router.put('/:id',
     body('image_urls')
       .optional()
       .isArray()
-      .withMessage('Image URLs must be an array')
+      .withMessage('Image URLs must be an array'),
+    body('dish_names')
+      .optional()
+      .isArray()
+      .withMessage('Dish names must be an array')
   ],
   ReviewController.updateReview
 );

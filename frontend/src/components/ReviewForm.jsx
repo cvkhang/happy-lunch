@@ -13,6 +13,41 @@ const ReviewForm = ({ restaurantId, onReviewAdded }) => {
   const [images, setImages] = useState([]);
   const [previewUrls, setPreviewUrls] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [menuItems, setMenuItems] = useState([]);
+  const [selectedDishes, setSelectedDishes] = useState([]);
+  const [customDish, setCustomDish] = useState('');
+
+  // Fetch menu items
+  React.useEffect(() => {
+    const fetchMenu = async () => {
+      try {
+        const response = await axios.get(`${API_BASE_URL}/restaurants/${restaurantId}`);
+        if (response.data && response.data.MenuItems) {
+          setMenuItems(response.data.MenuItems);
+        }
+      } catch (error) {
+        console.error('Error fetching menu items:', error);
+      }
+    };
+    if (restaurantId) {
+      fetchMenu();
+    }
+  }, [restaurantId]);
+
+  const toggleDishSelection = (dishName) => {
+    if (selectedDishes.includes(dishName)) {
+      setSelectedDishes(selectedDishes.filter(d => d !== dishName));
+    } else {
+      setSelectedDishes([...selectedDishes, dishName]);
+    }
+  };
+
+  const handleAddCustomDish = () => {
+    if (customDish.trim() && !selectedDishes.includes(customDish.trim())) {
+      setSelectedDishes([...selectedDishes, customDish.trim()]);
+      setCustomDish('');
+    }
+  };
 
   // ... (handleImageChange and removeImage remain mostly the same, but we might need to verify file types if strict)
 
@@ -81,12 +116,19 @@ const ReviewForm = ({ restaurantId, onReviewAdded }) => {
         }
       }
 
+      // Combine selected dishes and any pending custom dish
+      let finalDishes = [...selectedDishes];
+      if (customDish.trim() && !finalDishes.includes(customDish.trim())) {
+        finalDishes.push(customDish.trim());
+      }
+
       // Send data to backend as JSON
       const reviewData = {
         restaurant_id: restaurantId,
         rating: Number(rating),
         comment: comment,
-        image_urls: imageUrls // Send array of URLs
+        image_urls: imageUrls, // Send array of URLs
+        dish_names: finalDishes
       };
 
       await axios.post(
@@ -105,6 +147,8 @@ const ReviewForm = ({ restaurantId, onReviewAdded }) => {
       setImages([]);
       setPreviewUrls([]);
       setRating(5);
+      setSelectedDishes([]);
+      setCustomDish('');
       onReviewAdded();
     } catch (error) {
       console.error('Review submission error:', error);
@@ -146,6 +190,92 @@ const ReviewForm = ({ restaurantId, onReviewAdded }) => {
                 ★
               </button>
             ))}
+          </div>
+        </div>
+
+        {/* Dish Selection */}
+        <div>
+          <label className="block text-sm font-medium text-slate-600 mb-2">何を食べた</label>
+
+          {menuItems.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto custom-scrollbar p-1 mb-2">
+              {menuItems.map((item) => (
+                <div
+                  key={item.id}
+                  onClick={() => toggleDishSelection(item.name)}
+                  className={`p-2 rounded-lg border cursor-pointer transition-all flex items-center gap-2 ${selectedDishes.includes(item.name)
+                    ? 'bg-orange-50 border-orange-500 shadow-sm ring-1 ring-orange-200'
+                    : 'bg-white border-slate-200 hover:border-orange-300'
+                    }`}
+                >
+                  <div className="w-8 h-8 rounded bg-slate-100 overflow-hidden flex-shrink-0">
+                    {item.image_url ? (
+                      <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-slate-300">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-slate-800 text-xs truncate">{item.name}</div>
+                  </div>
+                  {selectedDishes.includes(item.name) && (
+                    <div className="text-orange-500">
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-xs text-slate-500 italic mb-2">
+              メニュー情報がありません。手動で入力してください。
+            </div>
+          )}
+
+          {/* Selected Dishes Tags */}
+          {selectedDishes.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-2">
+              {selectedDishes.map((dish, index) => (
+                <span key={index} className="px-2 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-medium flex items-center gap-1">
+                  {dish}
+                  <button
+                    type="button"
+                    onClick={() => toggleDishSelection(dish)}
+                    className="hover:text-orange-900 focus:outline-none"
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Manual Input */}
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={customDish}
+              onChange={(e) => setCustomDish(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddCustomDish())}
+              placeholder="その他（手動入力）..."
+              className="flex-1 px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 focus:bg-white focus:border-orange-500 outline-none transition-all text-sm"
+            />
+            <button
+              type="button"
+              onClick={handleAddCustomDish}
+              disabled={!customDish.trim()}
+              className="px-3 py-2 bg-slate-800 text-white rounded-lg text-sm font-medium hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              追加
+            </button>
           </div>
         </div>
 

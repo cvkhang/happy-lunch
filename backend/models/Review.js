@@ -38,6 +38,10 @@ const Review = sequelize.define('Review', {
     type: DataTypes.ARRAY(DataTypes.STRING),
     defaultValue: []
   },
+  dish_names: {
+    type: DataTypes.ARRAY(DataTypes.STRING),
+    defaultValue: []
+  },
   status: {
     type: DataTypes.ENUM('pending', 'approved', 'rejected'),
     defaultValue: 'pending'

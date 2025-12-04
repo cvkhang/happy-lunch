@@ -1,6 +1,6 @@
 const { validationResult } = require('express-validator');
 const ReviewRepository = require('../repositories/ReviewRepository');
-const { Restaurant } = require('../models');
+const { Restaurant, Notification, Review } = require('../models');
 
 class ReviewController {
   async getAllReviews(req, res) {
@@ -101,7 +101,8 @@ class ReviewController {
         restaurant_id,
         rating,
         comment,
-        image_urls: image_urls || []
+        image_urls: image_urls || [],
+        dish_names: req.body.dish_names || []
       });
 
       res.status(201).json({
@@ -139,6 +140,7 @@ class ReviewController {
 
 
       if (image_urls !== undefined) updateData.image_urls = image_urls;
+      if (req.body.dish_names !== undefined) updateData.dish_names = req.body.dish_names;
 
       const review = await ReviewRepository.update(id, updateData);
 
@@ -217,6 +219,18 @@ class ReviewController {
         return res.status(400).json({
           success: false,
           message: 'Already liked'
+        });
+      }
+
+      // Create notification for the review owner
+      const review = await ReviewRepository.findById(id);
+      if (review && review.user_id !== user_id) {
+        await Notification.create({
+          user_id: review.user_id,
+          type: 'like_review',
+          reference_id: id,
+          message: 'あなたのレビューが「いいね」されました！',
+          is_read: false
         });
       }
 

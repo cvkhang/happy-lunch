@@ -85,8 +85,12 @@ const ReviewList = ({ reviews, onReviewUpdated, readOnlyLikes = false }) => {
         <div key={review.id} className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
           <div className="flex justify-between items-start mb-4">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-orange-100 to-orange-200 rounded-full flex items-center justify-center text-orange-600 font-bold">
-                {review.User?.name?.charAt(0).toUpperCase() || 'U'}
+              <div className="w-10 h-10 bg-gradient-to-br from-orange-100 to-orange-200 rounded-full flex items-center justify-center text-orange-600 font-bold overflow-hidden">
+                {review.User && review.User.avatar_url ? (
+                  <img src={review.User.avatar_url} alt={review.User.name} className="w-full h-full object-cover" />
+                ) : (
+                  (review.User?.name?.charAt(0).toUpperCase()) || 'U'
+                )}
               </div>
               <div>
                 <h4 className="font-bold text-slate-800">{review.User?.name || 'Unknown User'}</h4>
@@ -113,19 +117,26 @@ const ReviewList = ({ reviews, onReviewUpdated, readOnlyLikes = false }) => {
                 <span className="font-bold text-orange-700">{review.rating}</span>
               </div>
 
-              {/* Status Badge - Only show in profile (readOnlyLikes=true) */}
-              {readOnlyLikes && review.status && (
-                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${review.status === 'approved' ? 'bg-green-100 text-green-600' :
-                  review.status === 'rejected' ? 'bg-red-100 text-red-600' :
-                    'bg-yellow-100 text-yellow-600'
+              {/* Status Badge - Only show pending and rejected, not approved */}
+              {readOnlyLikes && review.status && review.status !== 'approved' && (
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${review.status === 'rejected' ? 'bg-red-100 text-red-600' : 'bg-yellow-100 text-yellow-600'
                   }`}>
-                  {review.status === 'approved' ? '承認済み' :
-                    review.status === 'rejected' ? '却下' :
-                      '承認待ち'}
+                  {review.status === 'rejected' ? '却下' : '承認待ち'}
                 </span>
               )}
             </div>
           </div>
+
+          {/* Dish Names */}
+          {review.dish_names && review.dish_names.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-3">
+              {review.dish_names.map((dish, index) => (
+                <span key={index} className="px-2.5 py-0.5 bg-orange-50 text-orange-700 rounded-full text-xs font-medium border border-orange-100">
+                  {dish}
+                </span>
+              ))}
+            </div>
+          )}
 
           <p className="text-slate-600 mb-4 leading-relaxed">{review.comment}</p>
 

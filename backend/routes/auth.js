@@ -54,7 +54,7 @@ router.put('/profile',
   auth,
   [
     body('name').optional().trim(),
-    body('avatar_url').optional().isURL().withMessage('Please enter a valid URL'),
+    body('avatar_url').optional().trim(),
     body('intro').optional(),
     body('address').optional()
   ],
