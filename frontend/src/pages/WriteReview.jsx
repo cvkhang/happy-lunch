@@ -18,7 +18,8 @@ const WriteReview = () => {
   const [isSearching, setIsSearching] = useState(false);
 
   const [rating, setRating] = useState(0);
-  const [dishName, setDishName] = useState('');
+  const [selectedDishes, setSelectedDishes] = useState([]);
+  const [customDish, setCustomDish] = useState('');
   const [comment, setComment] = useState('');
   const [images, setImages] = useState([]);
   const [previewUrls, setPreviewUrls] = useState([]);
@@ -35,6 +36,8 @@ const WriteReview = () => {
       navigate('/login');
     }
   }, [isAuthenticated, navigate]);
+
+  const [menuItems, setMenuItems] = useState([]);
 
   // Search Restaurants Logic
   useEffect(() => {
@@ -62,10 +65,40 @@ const WriteReview = () => {
     }
   }, [restaurantSearch, selectedRestaurant]);
 
-  const handleSelectRestaurant = (restaurant) => {
+  const handleSelectRestaurant = async (restaurant) => {
     setSelectedRestaurant(restaurant);
     setRestaurantSearch(restaurant.name);
     setShowDropdown(false);
+    setSelectedDishes([]); // Reset selected dishes
+    setCustomDish('');
+
+    // Fetch menu items for the selected restaurant
+    try {
+      const response = await axios.get(`${API_BASE_URL}/restaurants/${restaurant.id}`);
+      if (response.data && response.data.MenuItems) {
+        setMenuItems(response.data.MenuItems);
+      } else {
+        setMenuItems([]);
+      }
+    } catch (error) {
+      console.error('Error fetching menu items:', error);
+      setMenuItems([]);
+    }
+  };
+
+  const toggleDishSelection = (dishName) => {
+    if (selectedDishes.includes(dishName)) {
+      setSelectedDishes(selectedDishes.filter(d => d !== dishName));
+    } else {
+      setSelectedDishes([...selectedDishes, dishName]);
+    }
+  };
+
+  const handleAddCustomDish = () => {
+    if (customDish.trim() && !selectedDishes.includes(customDish.trim())) {
+      setSelectedDishes([...selectedDishes, customDish.trim()]);
+      setCustomDish('');
+    }
   };
 
   // Image Handling
@@ -85,7 +118,7 @@ const WriteReview = () => {
 
     // Clear input value to allow selecting the same file again
     e.target.value = '';
-  };  
+  };
 
   const removeImage = (index) => {
     const newImages = [...images];
@@ -101,6 +134,12 @@ const WriteReview = () => {
   // Submit Handler
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!token) {
+      toast.error('認証エラー：再度ログインしてください');
+      navigate('/login');
+      return;
+    }
 
     if (!selectedRestaurant) {
       toast.error('レストランを選択してください');
@@ -152,11 +191,18 @@ const WriteReview = () => {
         }
       }
 
+      // Combine selected dishes and any pending custom dish
+      let finalDishes = [...selectedDishes];
+      if (customDish.trim() && !finalDishes.includes(customDish.trim())) {
+        finalDishes.push(customDish.trim());
+      }
+
       const reviewData = {
         restaurant_id: selectedRestaurant.id,
         rating,
-        comment: dishName ? `【食べたもの: ${dishName}】\n${comment}` : comment,
-        image_urls: uploadedImageUrls
+        comment,
+        image_urls: uploadedImageUrls,
+        dish_names: finalDishes
       };
 
       await axios.post(`${API_BASE_URL}/reviews`, reviewData, {
@@ -278,18 +324,103 @@ const WriteReview = () => {
               </div>
             </div>
 
-            {/* 5. Dish Name */}
+            {/* 5. Dish Name (Menu Selection) */}
             <div className="relative z-10">
               <label className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wider">
-                何を食べた
+                何を食べた <span className="text-xs font-normal text-slate-400 ml-1">(複数選択可)</span>
               </label>
-              <input
-                type="text"
-                value={dishName}
-                onChange={(e) => setDishName(e.target.value)}
-                placeholder="例：特製ラーメン、バインミー..."
-                className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-orange-500 focus:ring-4 focus:ring-orange-100 outline-none transition-all font-medium text-slate-800"
-              />
+
+              {selectedRestaurant ? (
+                <>
+                  {menuItems.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-60 overflow-y-auto custom-scrollbar p-1 mb-3">
+                      {menuItems.map((item) => (
+                        <div
+                          key={item.id}
+                          onClick={() => toggleDishSelection(item.name)}
+                          className={`p-3 rounded-xl border cursor-pointer transition-all flex items-center gap-3 ${selectedDishes.includes(item.name)
+                            ? 'bg-orange-50 border-orange-500 shadow-sm ring-1 ring-orange-200'
+                            : 'bg-white border-slate-200 hover:border-orange-300 hover:shadow-sm'
+                            }`}
+                        >
+                          <div className="w-12 h-12 rounded-lg bg-slate-100 overflow-hidden flex-shrink-0">
+                            {item.image_url ? (
+                              <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-slate-300">
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-slate-800 text-sm truncate">{item.name}</div>
+                            <div className="text-xs text-orange-600 font-semibold">
+                              {item.price ? `${Math.floor(item.price).toLocaleString('ja-JP')}đ` : ''}
+                            </div>
+                          </div>
+                          {selectedDishes.includes(item.name) && (
+                            <div className="text-orange-500">
+                              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                              </svg>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-sm text-slate-500 italic mb-2">
+                      メニュー情報がありません。手動で入力してください。
+                    </div>
+                  )}
+
+                  {/* Selected Dishes Tags */}
+                  {selectedDishes.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      {selectedDishes.map((dish, index) => (
+                        <span key={index} className="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm font-medium flex items-center gap-1">
+                          {dish}
+                          <button
+                            type="button"
+                            onClick={() => toggleDishSelection(dish)}
+                            className="hover:text-orange-900 focus:outline-none"
+                          >
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Manual Input */}
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={customDish}
+                      onChange={(e) => setCustomDish(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddCustomDish())}
+                      placeholder="その他（手動入力）..."
+                      className="flex-1 px-5 py-3 rounded-2xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-orange-500 focus:ring-4 focus:ring-orange-100 outline-none transition-all font-medium text-slate-800"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddCustomDish}
+                      disabled={!customDish.trim()}
+                      className="px-4 py-2 bg-slate-800 text-white rounded-xl font-medium hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      追加
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div className="text-sm text-slate-400 italic mb-2">
+                  先にレストランを選択してください
+                </div>
+              )}
             </div>
 
             {/* 6. Comment */}

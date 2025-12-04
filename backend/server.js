@@ -7,12 +7,22 @@ const authRoutes = require('./routes/auth');
 const reviewRoutes = require('./routes/reviews');
 const favoriteRoutes = require('./routes/favorites');
 const adminRoutes = require('./routes/admin');
+const notificationRoutes = require('./routes/notifications');
 const sequelize = require('./config/database');
 const { models } = require('./models');
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./config/swagger');
 
+const http = require('http');
+const { initSocket } = require('./socket');
+
+// ... (imports)
+
 const app = express();
+const server = http.createServer(app);
+
+// Initialize Socket.io
+initSocket(server);
 
 // Middleware
 app.use(cors());
@@ -32,6 +42,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/favorites', favoriteRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -59,7 +70,7 @@ const startServer = async () => {
     await sequelize.sync({ alter: true });
     console.log('Database synchronized.');
 
-    app.listen(config.PORT, () => {
+    server.listen(config.PORT, () => {
       console.log(`Server is running on http://localhost:${config.PORT}`);
       console.log(`API Documentation available at http://localhost:${config.PORT}/api-docs`);
     });

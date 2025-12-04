@@ -9,7 +9,7 @@ const auth = (req, res, next) => {
     // Get token from header
     const token = req.header('Authorization')?.replace('Bearer ', '');
 
-    if (!token) {
+    if (!token || token === 'null' || token === 'undefined') {
       return res.status(401).json({
         success: false,
         message: 'No token provided, authorization denied'

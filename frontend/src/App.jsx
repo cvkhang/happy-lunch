@@ -8,13 +8,14 @@ import RestaurantDetail from './components/RestaurantDetail';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Profile from './pages/Profile';
-// import AdminDashboard from './pages/AdminDashboard'; // Deprecated
 import AdminLayout from './layouts/AdminLayout';
 import AdminUserList from './components/admin/AdminUserList';
 import AdminReviewList from './components/admin/AdminReviewList';
 import AdminRestaurantMenuManager from './components/admin/AdminRestaurantMenuManager';
 import WriteReview from './pages/WriteReview';
 import Welcome from './pages/Welcome';
+import Community from './pages/Community';
+import Favorites from './pages/Favorites';
 import { useAuthStore } from './store/authStore';
 
 // Layout component for pages that need the main Header and Footer
@@ -39,7 +40,7 @@ const App = () => {
 
   return (
     <Router>
-      <Toaster position="top-center" />
+      <Toaster position="top-center" containerStyle={{ zIndex: 9999 }} />
       <Routes>
         {/* Welcome Page (No Main Header/Footer) */}
         <Route path="/" element={<Welcome />} />
@@ -54,6 +55,8 @@ const App = () => {
           <Route path="/restaurants/:id" element={<RestaurantDetail />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/write-review" element={<WriteReview />} />
+          <Route path="/community" element={<Community />} />
+          <Route path="/favorites" element={<Favorites />} />
         </Route>
 
         {/* Admin Routes (With Admin Header) */}

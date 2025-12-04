@@ -43,7 +43,7 @@ class RestaurantRepository {
    * @param {number} id - ID của restaurant
    * @returns {Promise<Object|null>} Restaurant hoặc null nếu không tìm thấy
    */
-  async findById(id) {
+  async findById(id, userId = null) {
     const restaurant = await Restaurant.findByPk(id, {
       include: [
         { model: MenuItem },
@@ -51,13 +51,39 @@ class RestaurantRepository {
           model: Review,
           where: { status: 'approved' },
           required: false,
-          include: [{ model: User, attributes: ['id', 'name', 'email', 'avatar_url'] }]
+          include: [
+            { model: User, attributes: ['id', 'name', 'email', 'avatar_url'] },
+            { model: require('../models').ReviewLike, attributes: ['user_id'] }
+          ]
         }
-      ]
+      ],
+      order: [[Review, 'createdAt', 'DESC']]
     });
 
+    if (!restaurant) return null;
 
-    return restaurant;
+    const restaurantData = restaurant.toJSON();
+
+    // Process reviews to add like count and status
+    if (restaurantData.Reviews) {
+      restaurantData.Reviews = restaurantData.Reviews.map(review => {
+        const likeCount = review.ReviewLikes ? review.ReviewLikes.length : 0;
+        const likedByUser = userId
+          ? review.ReviewLikes?.some(like => like.user_id === userId)
+          : false;
+
+        // Remove ReviewLikes array to keep response clean
+        delete review.ReviewLikes;
+
+        return {
+          ...review,
+          like_count: likeCount,
+          liked_by_user: likedByUser
+        };
+      });
+    }
+
+    return restaurantData;
   }
 
   /**

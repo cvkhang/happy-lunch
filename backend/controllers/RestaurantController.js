@@ -18,7 +18,8 @@ class RestaurantController {
   async getRestaurantById(req, res) {
     try {
       const { id } = req.params;
-      const restaurant = await restaurantRepository.findById(id);
+      const userId = req.user?.id;
+      const restaurant = await restaurantRepository.findById(id, userId);
 
       if (!restaurant) {
         return res.status(404).json({ error: 'Restaurant not found' });

@@ -5,6 +5,7 @@ import { FILTER_OPTIONS, getTimePeriod } from '../config/filterOptions';
 import { API_BASE_URL } from '../config/api';
 import useGeolocation from '../hooks/useGeolocation';
 import { calculateDistance } from '../utils/distance';
+import { useAuthStore } from '../store/authStore';
 
 const RestaurantList = () => {
   const [restaurants, setRestaurants] = useState([]);
@@ -13,6 +14,37 @@ const RestaurantList = () => {
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [displayCount, setDisplayCount] = useState(5);
+  const { user, token } = useAuthStore();
+  const [favoriteIds, setFavoriteIds] = useState([]);
+
+  useEffect(() => {
+    if (user && token) {
+      fetchFavorites();
+    } else {
+      setFavoriteIds([]);
+    }
+  }, [user, token]);
+
+  const fetchFavorites = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/favorites`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.data.success && Array.isArray(response.data.favorites)) {
+        setFavoriteIds(response.data.favorites.map(fav => fav.id));
+      }
+    } catch (error) {
+      console.error('Error fetching favorites:', error);
+    }
+  };
+
+  const handleToggleFavorite = (restaurantId, isNowFavorite) => {
+    if (isNowFavorite) {
+      setFavoriteIds(prev => [...prev, restaurantId]);
+    } else {
+      setFavoriteIds(prev => prev.filter(id => id !== restaurantId));
+    }
+  };
 
   // Filter states
   const [selectedCuisines, setSelectedCuisines] = useState([]);
@@ -588,7 +620,12 @@ const RestaurantList = () => {
           ) : (
             <div className="space-y-6">
               {filteredRestaurants.slice(0, displayCount).map((restaurant) => (
-                <RestaurantCard key={restaurant.id} restaurant={restaurant} />
+                <RestaurantCard
+                  key={restaurant.id}
+                  restaurant={restaurant}
+                  isFavorite={favoriteIds.includes(restaurant.id)}
+                  onToggleFavorite={handleToggleFavorite}
+                />
               ))}
 
               {/* Load More Button */}

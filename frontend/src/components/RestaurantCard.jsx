@@ -1,8 +1,47 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import axios from 'axios';
+import toast from 'react-hot-toast';
 import { formatDistance } from '../utils/distance';
+import { API_BASE_URL } from '../config/api';
+import { useAuthStore } from '../store/authStore';
 
-const RestaurantCard = ({ restaurant }) => {
+const RestaurantCard = ({ restaurant, isFavorite, onToggleFavorite }) => {
+  const { user, token } = useAuthStore();
+  const [loading, setLoading] = useState(false);
+
+  const handleLike = async (e) => {
+    e.preventDefault(); // Prevent navigation
+    e.stopPropagation();
+
+    if (!user) {
+      toast.error('ログインが必要です');
+      return;
+    }
+
+    if (loading) return;
+    setLoading(true);
+
+    try {
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+
+      if (isFavorite) {
+        await axios.delete(`${API_BASE_URL}/favorites/${restaurant.id}`, config);
+        toast.success('お気に入りから削除しました');
+        onToggleFavorite(restaurant.id, false);
+      } else {
+        await axios.post(`${API_BASE_URL}/favorites`, { restaurant_id: restaurant.id }, config);
+        toast.success('お気に入りに追加しました');
+        onToggleFavorite(restaurant.id, true);
+      }
+    } catch (error) {
+      console.error('Favorite error:', error);
+      toast.error('エラーが発生しました');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="flex flex-col md:flex-row md:h-56 bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-slate-100 overflow-hidden group">
       {/* Image Section */}
@@ -12,11 +51,19 @@ const RestaurantCard = ({ restaurant }) => {
           alt={restaurant.name}
           className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700"
         />
-        <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm p-2 rounded-full shadow-sm cursor-pointer hover:bg-red-50 hover:text-red-500 transition-colors">
-          <svg className="w-5 h-5 text-slate-400 hover:text-red-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <button
+          onClick={handleLike}
+          className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm p-2 rounded-full shadow-sm cursor-pointer hover:bg-red-50 transition-colors z-10"
+        >
+          <svg
+            className={`w-5 h-5 transition-colors ${isFavorite ? 'text-red-500 fill-current' : 'text-slate-400 hover:text-red-500'}`}
+            fill={isFavorite ? 'currentColor' : 'none'}
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
           </svg>
-        </div>
+        </button>
       </div>
 
       {/* Content Section */}

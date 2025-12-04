@@ -5,6 +5,7 @@ const MenuItem = require('./MenuItem');
 const Review = require('./Review');
 const ReviewLike = require('./ReviewLike');
 const Favorite = require('./Favorite');
+const Notification = require('./Notification');
 
 // Associations
 
@@ -32,6 +33,17 @@ ReviewLike.belongsTo(Review, { foreignKey: 'review_id' });
 User.belongsToMany(Restaurant, { through: Favorite, foreignKey: 'user_id', as: 'FavoriteRestaurants' });
 Restaurant.belongsToMany(User, { through: Favorite, foreignKey: 'restaurant_id', as: 'FavoritedBy' });
 
+// Favorite Associations (for direct querying)
+Favorite.belongsTo(User, { foreignKey: 'user_id' });
+Favorite.belongsTo(Restaurant, { foreignKey: 'restaurant_id' });
+
+// User - Notification (One-to-Many)
+User.hasMany(Notification, { foreignKey: 'user_id' });
+Notification.belongsTo(User, { foreignKey: 'user_id' });
+
+// Notification - Review (Association for deep linking)
+Notification.belongsTo(Review, { foreignKey: 'reference_id', constraints: false });
+
 module.exports = {
   sequelize,
   User,
@@ -39,5 +51,6 @@ module.exports = {
   MenuItem,
   Review,
   ReviewLike,
-  Favorite
+  Favorite,
+  Notification
 };

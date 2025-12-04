@@ -1,6 +1,7 @@
 const { validationResult } = require('express-validator');
 const ReviewRepository = require('../repositories/ReviewRepository');
 const { Restaurant, Notification, Review } = require('../models');
+const { sendNotificationToUser } = require('../socket');
 
 class ReviewController {
   async getAllReviews(req, res) {
@@ -222,16 +223,37 @@ class ReviewController {
         });
       }
 
+
+
       // Create notification for the review owner
       const review = await ReviewRepository.findById(id);
       if (review && review.user_id !== user_id) {
-        await Notification.create({
+        const notification = await Notification.create({
           user_id: review.user_id,
           type: 'like_review',
           reference_id: id,
           message: 'あなたのレビューが「いいね」されました！',
           is_read: false
         });
+
+        // Send real-time notification via Socket.io
+        const notificationWithData = await Notification.findOne({
+          where: { id: notification.id },
+          include: [
+            {
+              model: require('../models').Review,
+              attributes: ['id', 'restaurant_id'],
+              include: [
+                {
+                  model: require('../models').Restaurant,
+                  attributes: ['id', 'name']
+                }
+              ]
+            }
+          ]
+        });
+
+        sendNotificationToUser(review.user_id, notificationWithData);
       }
 
       res.json({

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { API_BASE_URL } from '../config/api';
 import ReviewList from './ReviewList';
@@ -9,7 +9,7 @@ import toast from 'react-hot-toast';
 
 const RestaurantDetail = () => {
   const { id } = useParams();
-  const { user } = useAuthStore();
+  const { user, token } = useAuthStore();
   const [restaurant, setRestaurant] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -19,7 +19,8 @@ const RestaurantDetail = () => {
 
   const fetchRestaurant = async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/restaurants/${id}`);
+      const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+      const response = await axios.get(`${API_BASE_URL}/restaurants/${id}`, config);
       setRestaurant(response.data);
       setLoading(false);
 
@@ -44,10 +45,25 @@ const RestaurantDetail = () => {
     }
   };
 
+  const location = useLocation();
+
   useEffect(() => {
-    window.scrollTo(0, 0);
+    if (!location.hash) {
+      window.scrollTo(0, 0);
+    }
     fetchRestaurant();
-  }, [id, user]);
+  }, [id, user, location.hash, location.search]);
+
+  // Scroll to review if hash is present
+  useEffect(() => {
+    if (location.hash && !loading && restaurant) {
+      const elementId = location.hash.replace('#', '');
+      const element = document.getElementById(elementId);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+  }, [location.hash, loading, restaurant]);
 
   const handleToggleFavorite = async () => {
     if (!user) {
@@ -56,7 +72,6 @@ const RestaurantDetail = () => {
     }
 
     try {
-      const token = localStorage.getItem('token');
       const config = { headers: { Authorization: `Bearer ${token}` } };
 
       if (isFavorite) {
