@@ -37,31 +37,11 @@ const MainLayout = () => {
 };
 
 const App = () => {
-  const { initAuth, logout } = useAuthStore();
+  const { initAuth } = useAuthStore();
 
   useEffect(() => {
     initAuth();
-
-    // Setup Axios interceptor to handle token expiration
-    const interceptor = axios.interceptors.response.use(
-      (response) => response,
-      (error) => {
-        if (error.response?.status === 401) {
-          // Check if it's a token expiration error
-          const errorMessage = error.response.data?.message;
-          if (errorMessage === 'Token is not valid' || errorMessage === 'Token expired' || errorMessage === 'No token provided, authorization denied') {
-            logout();
-            toast.error('セッションの有効期限が切れました。もう一度ログインしてください。');
-          }
-        }
-        return Promise.reject(error);
-      }
-    );
-
-    return () => {
-      axios.interceptors.response.eject(interceptor);
-    };
-  }, [initAuth, logout]);
+  }, [initAuth]);
 
   return (
     <Router>

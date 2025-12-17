@@ -384,7 +384,7 @@ const RestaurantList = () => {
       <div className="mb-12 pt-12">
         <div className="flex flex-col md:flex-row md:items-center gap-8">
           <h2 className="text-3xl md:text-4xl font-extrabold text-slate-800 tracking-tight">
-            Duc-sanこんにちは! <br />
+            {user ? `${user.name.split(' ').pop()}さん` : 'ゲスト'}こんにちは! <br />
             <span className="text-orange-500">何を食べたいですか?</span>
           </h2>
           <div className="relative flex-grow max-w-3xl">
