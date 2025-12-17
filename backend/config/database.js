@@ -14,6 +14,12 @@ if (process.env.DATABASE_URL) {
         require: true,
         rejectUnauthorized: false
       }
+    },
+    pool: {
+      max: 10,
+      min: 0,
+      acquire: 60000,
+      idle: 10000
     }
   });
 } else {
@@ -25,6 +31,12 @@ if (process.env.DATABASE_URL) {
       host: process.env.DB_HOST,
       dialect: process.env.DB_DIALECT,
       logging: false,
+      pool: {
+        max: 10,
+        min: 0,
+        acquire: 60000,
+        idle: 10000
+      }
     }
   );
 }

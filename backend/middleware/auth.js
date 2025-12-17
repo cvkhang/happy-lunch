@@ -26,6 +26,12 @@ const auth = (req, res, next) => {
 
     next();
   } catch (error) {
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({
+        success: false,
+        message: 'Token expired'
+      });
+    }
     console.error('Auth middleware error:', error);
     res.status(401).json({
       success: false,
@@ -71,6 +77,12 @@ const adminAuth = (req, res, next) => {
 
     next();
   } catch (error) {
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({
+        success: false,
+        message: 'Token expired'
+      });
+    }
     console.error('Admin auth middleware error:', error);
     res.status(401).json({
       success: false,

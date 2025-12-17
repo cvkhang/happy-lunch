@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
-import { Toaster } from 'react-hot-toast';
+import { Toaster, toast } from 'react-hot-toast';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import RestaurantList from './components/RestaurantList';
@@ -16,7 +16,12 @@ import WriteReview from './pages/WriteReview';
 import Welcome from './pages/Welcome';
 import Community from './pages/Community';
 import Favorites from './pages/Favorites';
+import axios from 'axios';
 import { useAuthStore } from './store/authStore';
+import { API_BASE_URL } from './config/api';
+
+// Set base URL for axios
+axios.defaults.baseURL = API_BASE_URL;
 
 // Layout component for pages that need the main Header and Footer
 const MainLayout = () => {
@@ -32,11 +37,31 @@ const MainLayout = () => {
 };
 
 const App = () => {
-  const { initAuth } = useAuthStore();
+  const { initAuth, logout } = useAuthStore();
 
   useEffect(() => {
     initAuth();
-  }, [initAuth]);
+
+    // Setup Axios interceptor to handle token expiration
+    const interceptor = axios.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        if (error.response?.status === 401) {
+          // Check if it's a token expiration error
+          const errorMessage = error.response.data?.message;
+          if (errorMessage === 'Token is not valid' || errorMessage === 'Token expired' || errorMessage === 'No token provided, authorization denied') {
+            logout();
+            toast.error('セッションの有効期限が切れました。もう一度ログインしてください。');
+          }
+        }
+        return Promise.reject(error);
+      }
+    );
+
+    return () => {
+      axios.interceptors.response.eject(interceptor);
+    };
+  }, [initAuth, logout]);
 
   return (
     <Router>
