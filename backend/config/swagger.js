@@ -5,11 +5,11 @@ const options = {
   definition: {
     openapi: '3.0.0',
     info: {
-      title: 'Happy Lunch API',
+      title: 'ハッピーランチ API',
       version: '1.0.0',
-      description: 'API documentation for Happy Lunch application - Restaurant search and management',
+      description: 'API documentation for ハッピーランチ application - Restaurant search and management',
       contact: {
-        name: 'Happy Lunch Team',
+        name: 'ハッピーランチ Team',
         email: 'support@happylunch.com',
       },
     },

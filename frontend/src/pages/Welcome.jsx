@@ -35,7 +35,7 @@ const Welcome = () => {
               className="h-12 w-12 rounded-full shadow-lg group-hover:scale-110 transition-transform duration-300"
             />
             <span className="text-2xl font-extrabold bg-gradient-to-r from-orange-500 to-red-600 bg-clip-text text-transparent tracking-tight">
-              Happy Lunch
+              ハッピーランチ
             </span>
           </div>
           <Link
@@ -77,7 +77,7 @@ const Welcome = () => {
           <a href="#" className="hover:text-orange-400 transition-colors">FAQ</a>
         </div>
         <p className="text-xs text-slate-600">
-          &copy; 2025 Happy Lunch. All rights reserved.
+          &copy; 2025 ハッピーランチ. All rights reserved.
         </p>
       </footer>
     </div>

@@ -8,8 +8,7 @@ export default function Register() {
     name: '',
     email: '',
     password: '',
-    confirmPassword: '',
-    nationality: 'vietnam'
+    confirmPassword: ''
   });
 
   const { register, isLoading } = useAuthStore();
@@ -39,8 +38,7 @@ export default function Register() {
       name: formData.name,
       email: formData.email,
       password: formData.password,
-      address: formData.nationality === 'japan' ? 'Japan' : 'Vietnam',
-      account_type: 'personal'
+      account_type: 'personal' // Default to personal
     };
 
     const result = await register(registerData);
@@ -65,7 +63,7 @@ export default function Register() {
           <Link to="/" className="flex items-center gap-3 w-fit group">
             <img src="/logo.png" alt="Logo" className="h-12 w-12 rounded-full shadow-lg group-hover:scale-110 transition-transform duration-300" />
             <span className="text-2xl font-extrabold bg-gradient-to-r from-orange-500 to-red-600 bg-clip-text text-transparent tracking-tight">
-              Happy Lunch
+              ハッピーランチ
             </span>
           </Link>
         </div>
@@ -138,38 +136,6 @@ export default function Register() {
                   onChange={handleChange}
                   disabled={isLoading}
                 />
-              </div>
-
-              {/* Nationality */}
-              <div className="space-y-4 pt-2">
-                <label className="block text-sm font-bold text-slate-700">国籍</label>
-                <div className="flex gap-6">
-                  <label className="flex items-center cursor-pointer group relative">
-                    <input
-                      type="radio"
-                      name="nationality"
-                      value="japan"
-                      checked={formData.nationality === 'japan'}
-                      onChange={handleChange}
-                      className="peer sr-only"
-                    />
-                    <div className="w-6 h-6 rounded-full border-2 border-slate-300 peer-checked:border-orange-500 peer-checked:border-[6px] transition-all duration-300"></div>
-                    <span className="ml-3 font-medium text-slate-600 group-hover:text-slate-800 peer-checked:text-slate-900 transition-colors">日本人</span>
-                  </label>
-
-                  <label className="flex items-center cursor-pointer group relative">
-                    <input
-                      type="radio"
-                      name="nationality"
-                      value="vietnam"
-                      checked={formData.nationality === 'vietnam'}
-                      onChange={handleChange}
-                      className="peer sr-only"
-                    />
-                    <div className="w-6 h-6 rounded-full border-2 border-slate-300 peer-checked:border-orange-500 peer-checked:border-[6px] transition-all duration-300"></div>
-                    <span className="ml-3 font-medium text-slate-600 group-hover:text-slate-800 peer-checked:text-slate-900 transition-colors">ベトナム人</span>
-                  </label>
-                </div>
               </div>
 
               {/* Submit Button */}

@@ -32,7 +32,7 @@ app.use(express.urlencoded({ extended: true }));
 // Swagger UI
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
   customCss: '.swagger-ui .topbar { display: none }',
-  customSiteTitle: 'Happy Lunch API Documentation',
+  customSiteTitle: 'ハッピーランチ API Documentation',
 }));
 
 
