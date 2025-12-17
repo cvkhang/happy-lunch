@@ -20,9 +20,8 @@ const auth = (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.user = decoded;
 
-    // Update last_active_at (fire and forget)
-    const { User } = require('../models');
-    User.update({ last_active_at: new Date() }, { where: { id: req.user.id } }).catch(err => console.error('Update active error', err));
+    // Update last_active_at removed to prevent connection pool exhaustion
+    // distinct from business logic, this was causing high DB load on every request.
 
     next();
   } catch (error) {
